@@ -326,17 +326,17 @@ const std::string Unicode2String(const std::string &str) {
 #if defined(NO_LOCALE)
   if (str == "") return "";
   int i = Hex2Dec("0x" + str);
-  if (i >= 128 || i < 0)
+  if (i < 0)
     return "?";
   else
     return std::string(1, (char)i);
 #elif defined(FORCE_UTF8)
   if (str == "") return "";
-  std::wstring m(2, Hex2Dec("0x" + str));
+  std::wstring m(1, Hex2Dec("0x" + str));
   return std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(m);
 #else
   if (str == "") return "";
-  std::wstring m(2, Hex2Dec("0x" + str));
+  std::wstring m(1, Hex2Dec("0x" + str));
   std::string ret;
   try {
     ret = std::string(
