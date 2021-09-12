@@ -921,13 +921,17 @@ int main(int argc, char** argv) {
         throw nullptr;
       std::wstring run = load_mod.StringValue + L" ";
       for (size_t i = 0; i < arg.ArrayValue.size(); i++) {
-        if(arg.ArrayValue[i].tp==Variable::String)run += arg.ArrayValue[i].StringValue + L" ";
-        else run += arg.ArrayValue[i].toString() + L" ";
+        if (arg.ArrayValue[i].tp == Variable::String)
+          run += arg.ArrayValue[i].StringValue + L" ";
+        else
+          run += arg.ArrayValue[i].toString() + L" ";
       }
       return Lpp::Return_Value(
           cmd, Lpp::Expression_Calc_Value,
-          Variable::var(system(Variable::WString2String(run.substr(0, run.length() - 1)).c_str())), scope,
-          all_scope, this_scope);
+          Variable::var(
+              system(Variable::WString2String(run.substr(0, run.length() - 1))
+                         .c_str())),
+          scope, all_scope, this_scope);
     } catch (...) {
       return Lpp::Return_Value(cmd, Lpp::Throw_Return_Value,
                                Variable::parse(L"SyntaxError"), scope,
@@ -974,10 +978,6 @@ int main(int argc, char** argv) {
               while (i < cm.length() && cm[i] != L'\n') i++;
               i++;
             }
-            if (cm[i] == L'\n' &&
-                (i <= 0 || (cm[i - 1] != L'[' && cm[i - 1] != L'{' &&
-                            cm[i - 1] != L'(' && cm[i - 1] != L';')))
-              cm[i] = L';';
             if ((cm[i] == L'[' || cm[i] == L'{' || cm[i] == L'(') && a == 0)
               j++;
             if ((cm[i] == L']' || cm[i] == L'}' || cm[i] == L')') && a == 0)
@@ -1067,25 +1067,15 @@ int main(int argc, char** argv) {
           if (cm[i] == L'\\')
             z = !z;
           else if (cm[i] == L'\"' && !z) {
-            if (a == 0)
-              a = 1;
-            else if (a == 1)
-              a = 0;
+            if (a == 0 || a == 1) a = !a;
           } else if (cm[i] == L'\'' && !z) {
-            if (a == 2)
-              a = 1;
-            else if (a == 2)
-              a = 0;
+            if (a == 0 || a == 2) a = ((!a) == 1 ? 2 : 0);
           } else
             z = 0;
           if (cm[i] == L'#' && a == 0) {
             while (i < cm.length() && cm[i] != L'\n') i++;
             i++;
           }
-          if (cm[i] == L'\n' &&
-              (i <= 0 || (cm[i - 1] != L'[' && cm[i - 1] != L'{' &&
-                          cm[i - 1] != L'(' && cm[i - 1] != L';')))
-            cm[i] = L';';
           if ((cm[i] == L'[' || cm[i] == L'{' || cm[i] == L'(') && a == 0) j++;
           if ((cm[i] == L']' || cm[i] == L'}' || cm[i] == L')') && a == 0) j--;
         }
@@ -1182,10 +1172,6 @@ int main(int argc, char** argv) {
             while (i < cm.length() && cm[i] != L'\n') i++;
             i++;
           }
-          if (cm[i] == L'\n' &&
-              (i > 0 && cm[i - 1] != L'[' && cm[i - 1] != L'{' &&
-               cm[i - 1] != L'(' && cm[i - 1] != L';'))
-            cm[i] = L';';
           if ((cm[i] == L'[' || cm[i] == L'{' || cm[i] == L'(') && a == 0) j++;
           if ((cm[i] == L']' || cm[i] == L'}' || cm[i] == L')') && a == 0) j--;
         }
@@ -1251,25 +1237,15 @@ int main(int argc, char** argv) {
           if (cm[i] == L'\\')
             z = !z;
           else if (cm[i] == L'\"' && !z) {
-            if (a == 0)
-              a = 1;
-            else if (a == 1)
-              a = 0;
+            if (a == 0 || a == 1) a = !a;
           } else if (cm[i] == L'\'' && !z) {
-            if (a == 2)
-              a = 1;
-            else if (a == 2)
-              a = 0;
+            if (a == 0 || a == 2) a = ((!a) == 1 ? 2 : 0);
           } else
             z = 0;
           if (cm[i] == L'#' && a == 0) {
             while (i < cm.length() && cm[i] != L'\n') i++;
             i++;
           }
-          if (cm[i] == L'\n' &&
-              (i <= 0 || (cm[i - 1] != L'[' && cm[i - 1] != L'{' &&
-                          cm[i - 1] != L'(' && cm[i - 1] != L';')))
-            cm[i] = L';';
           if ((cm[i] == L'[' || cm[i] == L'{' || cm[i] == L'(') && a == 0) j++;
           if ((cm[i] == L']' || cm[i] == L'}' || cm[i] == L')') && a == 0) j--;
         }
