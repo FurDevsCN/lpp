@@ -32,7 +32,7 @@ A normal command lambda function should be like this:
 					   };
 ```
 
-**cmd** : this is the user's command.You can use **name**\(std::string\) to get the command name,and **args**\(std::vector< std::string >\) to get the command arguments.  
+**cmd** : this is the user's command.You can use **name**\(std::wstring\) to get the command name,and **args**\(std::vector< std::wstring >\) to get the command arguments.  
 **scope** : this is the **current** variable scope.  
 **all_scope** : this is the **global** variable scope.  
 **this_scope** : this is the variable scope of _this_.
@@ -87,7 +87,7 @@ cmd.exp_calc(Variable::parse(something),scope,all_scope,this_scope);
 This function may modify the scope.
 
 ```
-Return_Object get_object(const std::string &n, Variable::var &scope,
+Return_Object get_object(const std::wstring &n, Variable::var &scope,
                            Variable::var &all_scope, Variable::var &this_scope,
                            const size_t &count_dont_parse,
                            const bool &nonewobject) const;
@@ -143,10 +143,10 @@ Please see **var.h**::Variable::var() for more informations.
 
 ```
 /*
-const std::string &x : The string that will be parsed.
+const std::wstring &x : The string that will be parsed.
 const bool& isConst : The parsed value's isConst property.
 */
-const var parse(const std::string &x, const bool& isConst = false);
+const var parse(const std::wstring &x, const bool& isConst = false);
 ```
 
 Parse the string to Variable.  

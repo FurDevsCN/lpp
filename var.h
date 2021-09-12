@@ -2,136 +2,126 @@
 L++ programming language was under the MIT license.
 Copyright(c) 2021 nu11ptr team.
 */
-/*
-compile flags:
-FORCE_UTF8 : converts Unicode to UTF-8.
-NO_LOCALE : use C locale.
-*/
 #ifndef VAR_MODULE
 #define VAR_MODULE
-#ifndef NO_LOCALE
 #include <locale>
-#endif
 #include <map>
 #include <string>
 #include <vector>
-#ifdef FORCE_UTF8
-#include <codecvt>
-#endif
 namespace Variable {
 typedef class ConvFail {
-  std::string _err;
+  std::wstring _err;
 
  public:
-  const std::string what() const { return _err; }
+  const std::wstring what() const { return _err; }
   ConvFail() {}
-  ConvFail(const std::string &err) { _err = err; }
+  ConvFail(const std::wstring &err) { _err = err; }
 } ConvFail;
 typedef class ExprErr {
-  std::string _err;
+  std::wstring _err;
 
  public:
-  const std::string what() const { return _err; }
+  const std::wstring what() const { return _err; }
   ExprErr() {}
-  ExprErr(const std::string &err) { _err = err; }
+  ExprErr(const std::wstring &err) { _err = err; }
 } ExprErr;
 typedef class SyntaxErr {
-  std::string _err;
+  std::wstring _err;
 
  public:
-  const std::string what() const { return _err; }
+  const std::wstring what() const { return _err; }
   SyntaxErr() {}
-  SyntaxErr(const std::string &err) { _err = err; }
+  SyntaxErr(const std::wstring &err) { _err = err; }
 } SyntaxErr;
 size_t colon_judge(char now, size_t nowa, bool z) {
-  if (now == '\"' && !z) {
+  if (now == L'\"' && !z) {
     if (nowa == 0 || nowa == 1) return !nowa;
-  } else if (now == '\'' && !z) {
+  } else if (now == L'\'' && !z) {
     if (nowa == 0 || nowa == 2) return (!nowa) == 1 ? 2 : 0;
   }
   return nowa;
 }
-int get_op_priority(const std::string &op) {
-  if (op == "+") return 1;
-  if (op == ",") return 0;
-  if (op == "-") return 1;
-  if (op == "*") return 2;
-  if (op == "/") return 2;
-  if (op == "%") return 2;
-  if (op == "(") return 1;
-  if (op == ")") return 3;
-  if (op == "==") return 1;
-  if (op == "=") return 0;
-  if (op == "+=") return 0;
-  if (op == "-=") return 0;
-  if (op == "*=") return 0;
-  if (op == "/=") return 0;
-  if (op == "%=") return 0;
-  if (op == "|=") return 0;
-  if (op == "&=") return 0;
-  if (op == "^=") return 0;
-  if (op == ">>=") return 0;
-  if (op == ">>>=") return 0;
-  if (op == "<<=") return 0;
-  if (op == "++") return 0;
-  if (op == "--") return 0;
-  if (op == "!=") return 1;
-  if (op == ">") return 1;
-  if (op == "<") return 1;
-  if (op == ">=") return 1;
-  if (op == "<=") return 1;
-  if (op == "&&") return 0;
-  if (op == "||") return 0;
-  if (op == "!") return 0;
-  if (op == ">>") return 1;
-  if (op == "<<") return 1;
-  if (op == "^") return 1;
-  if (op == "&") return 1;
-  if (op == "~") return 0;
-  if (op == "|") return 1;
-  if (op == ">>>") return 1;
-  if (op == "=") return 1;
+int get_op_priority(const std::wstring &op) {
+  if (op == L"+") return 1;
+  if (op == L",") return 0;
+  if (op == L"-") return 1;
+  if (op == L"*") return 2;
+  if (op == L"/") return 2;
+  if (op == L"%") return 2;
+  if (op == L"(") return 1;
+  if (op == L")") return 3;
+  if (op == L"==") return 1;
+  if (op == L"=") return 0;
+  if (op == L"+=") return 0;
+  if (op == L"-=") return 0;
+  if (op == L"*=") return 0;
+  if (op == L"/=") return 0;
+  if (op == L"%=") return 0;
+  if (op == L"|=") return 0;
+  if (op == L"&=") return 0;
+  if (op == L"^=") return 0;
+  if (op == L">>=") return 0;
+  if (op == L">>>=") return 0;
+  if (op == L"<<=") return 0;
+  if (op == L"++") return 0;
+  if (op == L"--") return 0;
+  if (op == L"!=") return 1;
+  if (op == L">") return 1;
+  if (op == L"<") return 1;
+  if (op == L">=") return 1;
+  if (op == L"<=") return 1;
+  if (op == L"&&") return 0;
+  if (op == L"||") return 0;
+  if (op == L"!") return 0;
+  if (op == L">>") return 1;
+  if (op == L"<<") return 1;
+  if (op == L"^") return 1;
+  if (op == L"&") return 1;
+  if (op == L"~") return 0;
+  if (op == L"|") return 1;
+  if (op == L">>>") return 1;
+  if (op == L"=") return 1;
   return -1;
 }
-const bool isExpression(std::string p) {
+const bool isExpression(std::wstring p) {
   for (size_t i = 0, j = 0, a = 0, z = 0; i < p.length(); i++) {
-    if (p[i] == '\\')
+    if (p[i] == L'\\')
       z = !z;
-    else if (p[i] == '\"' || p[i] == '\'')
+    else if (p[i] == L'\"' || p[i] == L'\'')
       a = colon_judge(p[i], a, z);
     else
       z = 0;
-    if ((p[i] == '(' || p[i] == '{' || p[i] == '[') && a == 0)
+    if ((p[i] == L'(' || p[i] == L'{' || p[i] == L'[') && a == 0)
       j++;
-    else if ((p[i] == ')' || p[i] == '}' || p[i] == ']') && a == 0)
+    else if ((p[i] == L')' || p[i] == L'}' || p[i] == L']') && a == 0)
       j--;
-    else if (get_op_priority(std::string(1, p[i])) != -1 && i > 0 &&
-             p[i - 1] != 'e' && p[i - 1] != 'E' && a == 0 && j == 0)
+    else if (get_op_priority(std::wstring(1, p[i])) != -1 && i > 0 &&
+             p[i - 1] != L'e' && p[i - 1] != L'E' && a == 0 && j == 0)
       return true;
   }
   return false;
 }
-std::string castExpression(const std::vector<std::string> &p) {
-  std::string ret;
-  std::vector<std::string> temp;
-  std::string last, temp2;
-  std::string op;
-  for (std::vector<std::string>::const_reverse_iterator i = p.crbegin();
+std::wstring castExpression(const std::vector<std::wstring> &p) {
+  std::wstring ret;
+  std::vector<std::wstring> temp;
+  std::wstring last, temp2;
+  std::wstring op;
+  for (std::vector<std::wstring>::const_reverse_iterator i = p.crbegin();
        i != p.crend(); i++) {
     op = (*i);
-    if (get_op_priority(op) != -1 && op != "!" && op != "~") {
+    if (get_op_priority(op) != -1 && op != L"!" && op != L"~") {
       temp2 = temp[temp.size() - 1];
       temp.pop_back();
       temp2 += op;
       temp2 += temp[temp.size() - 1];
       temp.pop_back();
       if (get_op_priority(op) >= get_op_priority(last)) {
-        temp.push_back("(" + temp2 + ")");
+        temp.push_back(L"(" + temp2 + L")");
       } else {
         temp.push_back(temp2);
       }
       last = op;
-    } else if (op == "!") {
+    } else if (op == L"!") {
       temp2 = op + temp[temp.size() - 1];
       temp.pop_back();
       temp.push_back(temp2);
@@ -149,26 +139,26 @@ std::string castExpression(const std::vector<std::string> &p) {
   }
   return ret;
 }
-std::vector<std::string> genExpression(const std::vector<std::string> &p) {
-  std::vector<std::string> ret;
-  std::vector<std::string> temp;
-  std::vector<std::string> fin;
-  std::string op;
-  for (std::vector<std::string>::const_reverse_iterator i = p.crbegin();
+std::vector<std::wstring> genExpression(const std::vector<std::wstring> &p) {
+  std::vector<std::wstring> ret;
+  std::vector<std::wstring> temp;
+  std::vector<std::wstring> fin;
+  std::wstring op;
+  for (std::vector<std::wstring>::const_reverse_iterator i = p.crbegin();
        i != p.crend(); i++) {
     op = (*i);
-    if ((get_op_priority(op) != -1) && op != ")" && op != "(") {
-      while (!temp.empty() && temp[temp.size() - 1] != ")" &&
+    if ((get_op_priority(op) != -1) && op != L")" && op != L"(") {
+      while (!temp.empty() && temp[temp.size() - 1] != L")" &&
              get_op_priority(temp[temp.size() - 1]) > get_op_priority(op)) {
         ret.push_back(temp[temp.size() - 1]);
         temp.pop_back();
       }
       temp.push_back(op);
-    } else if (op == ")") {
+    } else if (op == L")") {
       temp.push_back(op);
-    } else if (op == "(") {
+    } else if (op == L"(") {
       while (!temp.empty()) {
-        if (temp[temp.size() - 1] == ")") {
+        if (temp[temp.size() - 1] == L")") {
           temp.pop_back();
           break;
         } else {
@@ -183,123 +173,125 @@ std::vector<std::string> genExpression(const std::vector<std::string> &p) {
   for (size_t i = 0; i < ret.size(); i++) fin.push_back(*(ret.crbegin() + i));
   return fin;
 }
-const std::vector<std::string> splitExpression(const std::string &p) {
+const std::vector<std::wstring> splitExpression(const std::wstring &p) {
   size_t a = 0;
   int f = 0;
   bool x = false;
   bool z = false;
-  std::vector<std::string> ret;
-  std::string temp;
+  std::vector<std::wstring> ret;
+  std::wstring temp;
   for (size_t i = 0; i < p.length(); i++) {
     switch (p[i]) {
-      case '\\': {
+      case L'\\': {
         z = !z;
         temp += p[i];
         break;
       }
-      case '\'':
-      case '\"': {
+      case L'\'':
+      case L'\"': {
         a = colon_judge(p[i], a, z);
         temp += p[i];
         break;
       }
-      case '>':
-      case '=':
-      case '&':
-      case '|':
-      case '<': {
+      case L'>':
+      case L'=':
+      case L'&':
+      case L'|':
+      case L'<': {
         if (a == 0 && f == 0 &&
-            (i == 0 || p[i - 1] == p[i] || p[i - 1] == '>' || p[i - 1] == '<' ||
-             x)) {
-          if (temp != "") {
+            (i == 0 || p[i - 1] == p[i] || p[i - 1] == L'>' ||
+             p[i - 1] == L'<' || x)) {
+          if (temp != L"") {
             if (x) {
-              if (ret.empty()) throw ExprErr("assert ret.empty()!=true failed");
+              if (ret.empty())
+                throw ExprErr(L"assert ret.empty()!=true failed");
               ret[ret.size() - 1] += temp;
             } else
               ret.push_back(temp);
-            temp = "";
+            temp = L"";
           }
-          if (ret.empty()) throw ExprErr("assert ret.empty()!=true failed");
+          if (ret.empty()) throw ExprErr(L"assert ret.empty()!=true failed");
           ret[ret.size() - 1] += p[i];
-          if (p[i] == '<' || p[i] == '>') x = !x;
+          if (p[i] == L'<' || p[i] == L'>') x = !x;
         } else if (a == 0 && f == 0) {
-          if (temp != "") {
+          if (temp != L"") {
             ret.push_back(temp);
-            temp = "";
+            temp = L"";
           }
-          ret.push_back(std::string(1, p[i]));
-          if (p[i] == '&' || p[i] == '|') x = true;
+          ret.push_back(std::wstring(1, p[i]));
+          if (p[i] == L'&' || p[i] == L'|') x = true;
         } else
           temp += p[i];
         break;
       }
-      case '-': {
-        if (a == 0 && f == 0 && (i == 0 || p[i - 1] == 'e' || p[i - 1] == 'E'))
+      case L'-': {
+        if (a == 0 && f == 0 &&
+            (i == 0 || p[i - 1] == L'e' || p[i - 1] == L'E'))
           temp += p[i];  // ret[ret.size()-1]+=p[i];
         else if (x) {
-          if (ret.empty()) throw ExprErr("assert ret.empty()!=true failed");
+          if (ret.empty()) throw ExprErr(L"assert ret.empty()!=true failed");
           ret[ret.size() - 1] += p[i];
         } else if (a == 0 && f == 0) {
-          if (temp != "") {
+          if (temp != L"") {
             ret.push_back(temp);
-            temp = "";
+            temp = L"";
             x = true;
           }
-          ret.push_back(std::string(1, p[i]));
+          ret.push_back(std::wstring(1, p[i]));
         } else
           temp += p[i];
         break;
       }
-      case '~':
-      case '!':
-      case '+':
-      case '*':
-      case '/':
-      case ',':
-      case '%': {
+      case L'~':
+      case L'!':
+      case L'+':
+      case L'*':
+      case L'/':
+      case L',':
+      case L'%': {
         if (a == 0 && f == 0) {
-          if (temp != "") {
+          if (temp != L"") {
             ret.push_back(temp);
-            temp = "";
+            temp = L"";
           }
-          if (ret.empty()) throw ExprErr("assert ret.empty()!=true failed");
-          if (p[i] == '+' &&
-              ret[ret.size() - 1][ret[ret.size() - 1].length() - 1] == '+') {
-            ret[ret.size() - 1] += "+";
+          if (ret.empty()) throw ExprErr(L"assert ret.empty()!=true failed");
+          if (p[i] == L'+' &&
+              ret[ret.size() - 1][ret[ret.size() - 1].length() - 1] == L'+') {
+            ret[ret.size() - 1] += L"+";
             break;
           }
           x = true;
-          ret.push_back(std::string(1, p[i]));
+          ret.push_back(std::wstring(1, p[i]));
         } else
           temp += p[i];
         break;
       }
-      case '(': {
+      case L'(': {
         if (a == 0 && f == 0) {
-          if (temp != "") ret.push_back(temp), temp = "";
+          if (temp != L"") ret.push_back(temp), temp = L"";
           f++;
-          ret.push_back("(");
+          ret.push_back(L"(");
         } else
-          temp += "(";
+          temp += L"(";
         break;
       }
-      case ')': {
+      case L')': {
         if (a == 0 && f == 1) {
-          if (temp != "") ret.push_back(temp), temp = "";
+          if (temp != L"") ret.push_back(temp), temp = L"";
           f--;
-          ret.push_back(")");
+          ret.push_back(L")");
         } else
-          temp += ")";
+          temp += L")";
         break;
       }
-      case '{':
-      case '[': {
+      case L'{':
+      case L'[': {
         if (a == 0) f++;
         temp += p[i];
         break;
       }
-      case '}':
-      case ']': {
+      case L'}':
+      case L']': {
         if (a == 0) f--;
         temp += p[i];
         break;
@@ -309,119 +301,97 @@ const std::vector<std::string> splitExpression(const std::string &p) {
         break;
       }
     }
-    if (p[i] != '\\') z = false;
+    if (p[i] != L'\\') z = false;
   }
-  if (f != 0) throw ExprErr("f!=0");
-  if (a != 0) throw ExprErr("a!=0");
-  if (temp != "") ret.push_back(temp);
+  if (f != 0) throw ExprErr(L"f!=0");
+  if (a != 0) throw ExprErr(L"a!=0");
+  if (temp != L"") ret.push_back(temp);
   return ret;
 }
-
-const int Hex2Dec(const std::string &m) {
+const int Hex2Dec(const std::wstring &m) {
   int l;
   l = std::stoi(m, 0, 16);
   return l;
 }
-const std::string Unicode2String(const std::string &str) {
-#if defined(NO_LOCALE)
-  if (str == "") return "";
-  int i = Hex2Dec("0x" + str);
-  if (i < 0)
-    return "?";
-  else
-    return std::string(1, (char)i);
-#elif defined(FORCE_UTF8)
-  if (str == "") return "";
-  std::wstring m(1, Hex2Dec("0x" + str));
-  return std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(m);
-#else
-  if (str == "") return "";
-  std::wstring m(1, Hex2Dec("0x" + str));
-  std::string ret;
-  try {
-    ret = std::string(
-        m.length() *
-                std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t> >(
-                    std::locale(""))
-                    .max_length() +
-            1,
-        '\0');
-  } catch (...) {
-    return "?";
-  }
-  mbstate_t mb;
-  const wchar_t *from_next = nullptr;
-  char *to_next = nullptr;
-  if (std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t> >(
-          std::locale(""))
-          .out(mb, &m[0], &m[m.size() - 1], from_next, &ret[0],
-               &ret[ret.size() - 1], to_next) != std::codecvt_base::result::ok)
-    return "?";
-  ret.resize(to_next - &ret[0]);
-  return ret;
-#endif
+const std::wstring Unicode2String(const std::wstring &str) {
+  if (str == L"") return L"";
+  return std::wstring(1, Hex2Dec(L"0x" + str));
 }
-const std::string clearnull(const std::string &x) {
-  std::string tmp;
+std::wstring String2WString(const std::string &s) {
+  std::wstring t(s.length(), L'\0');
+  size_t q=mbstowcs(&t[0], &s[0], s.length());
+  if((int)q==-1)return std::wstring(s.length(),L'?');
+  else t.resize(q);
+  return t;
+}
+std::string WString2String(const std::wstring &s) {
+  std::string t(s.length()*8, L'\0');
+  size_t q=wcstombs(&t[0], &s[0], t.length());
+  if((int)q==-1)return std::string(t.length(),L'?');
+  else t.resize(q);
+  return t;
+}
+const std::wstring clearnull(const std::wstring &x) {
+  std::wstring tmp;
   for (size_t i = 0, a = 0, z = 0; i < x.length(); i++) {
-    if (x[i] == '\\')
+    if (x[i] == L'\\')
       z = !z;
-    else if (x[i] == '\"' || x[i] == '\'')
+    else if (x[i] == L'\"' || x[i] == L'\'')
       a = colon_judge(x[i], a, z);
     else
       z = 0;
-    if ((x[i] == '\r' || x[i] == '\n' || x[i] == '\t') && a == 0)
+    if ((x[i] == L'\r' || x[i] == L'\n' || x[i] == L'\t') && a == 0)
       continue;
-    else if (x[i] == ' ' && a == 0 &&
-             (i <= 0 || (tmp[i - 1] == '(' || tmp[i - 1] == '[' ||
-                         tmp[i - 1] == '{' || tmp[i - 1] == ' ')) &&
-             (i <= 0 ||
-              !((tmp[i - 1] >= 'a' && tmp[i - 1] <= 'z') ||
-                (tmp[i - 1] >= 'A' && tmp[i - 1] <= 'Z') || tmp[i - 1] == '_' ||
-                (tmp[i - 1] >= '0' && tmp[i - 1] <= '9')))) {
+    else if (x[i] == L' ' && a == 0 &&
+             (i <= 0 || (tmp[i - 1] == L'(' || tmp[i - 1] == L'[' ||
+                         tmp[i - 1] == L'{' || tmp[i - 1] == L' ')) &&
+             (i <= 0 || !((tmp[i - 1] >= L'a' && tmp[i - 1] <= L'z') ||
+                          (tmp[i - 1] >= L'A' && tmp[i - 1] <= L'Z') ||
+                          tmp[i - 1] == L'_' ||
+                          (tmp[i - 1] >= L'0' && tmp[i - 1] <= L'9')))) {
       continue;
     } else
       tmp += x[i];
   }
   return tmp;
 }
-const std::vector<std::string> code_split(const std::string &x) {
-  std::string p;
+const std::vector<std::wstring> code_split(const std::wstring &x) {
+  std::wstring p;
   for (size_t i = 0, a = 0, z = 0; i < x.length(); i++) {
-    if (x[i] == '\\')
+    if (x[i] == L'\\')
       z = !z;
-    else if (x[i] == '\"' || x[i] == '\'')
+    else if (x[i] == L'\"' || x[i] == L'\'')
       a = colon_judge(x[i], a, z);
     else
       z = 0;
-    if (x[i] == '\n' && a == 0 && i >= 1 && x[i - 1] != '[' &&
-        x[i - 1] != '(' && x[i - 1] != '{')
-      p += ';';  // p[i]=';';else p[i]=' ';
-    if (x[i] != '\n') p += x[i];
+    if (x[i] == L'\n' && a == 0 && i >= 1 && x[i - 1] != L'[' &&
+        x[i - 1] != L'(' && x[i - 1] != L'{')
+      p += L';';  // p[i]=';';else p[i]=' L';
+    if (x[i] != L'\n') p += x[i];
   }
-  std::vector<std::string> ret;
-  std::string temp;
+  std::vector<std::wstring> ret;
+  std::wstring temp;
   for (size_t i = 0, j = 0, a = 0, z = 0; i < p.length(); i++) {
-    if (p[i] == '\\')
+    if (p[i] == L'\\')
       z = !z;
-    else if (p[i] == '\"' || p[i] == '\'')
+    else if (p[i] == L'\"' || p[i] == L'\'')
       a = colon_judge(p[i], a, z);
     else
       z = 0;
-    if ((p[i] == '(' || p[i] == '{' || p[i] == '[') && a == 0)
+    if ((p[i] == L'(' || p[i] == L'{' || p[i] == L'[') && a == 0)
       j++;
-    else if ((p[i] == ')' || p[i] == '}' || p[i] == ']') && a == 0)
+    else if ((p[i] == L')' || p[i] == L'}' || p[i] == L']') && a == 0)
       j--;
-    if (p[i] == ';' && a == 0 && j == 0)
-      ret.push_back(temp), temp = "";
+    if (p[i] == L';' && a == 0 && j == 0)
+      ret.push_back(temp), temp = L"";
     else
       temp += p[i];
   }
-  if (temp != "") ret.push_back(temp);
+  if (temp != L"") ret.push_back(temp);
   for (size_t i = 0; i < ret.size(); i++) {
-    std::string w;
+    std::wstring w;
     for (size_t j = 0, flag = 0; j < ret[i].length(); j++) {
-      if (ret[i][j] == ' ' && flag == 0)
+      if (ret[i][j] == L' ' && flag == 0)
         continue;
       else {
         flag = 1;
@@ -430,9 +400,9 @@ const std::vector<std::string> code_split(const std::string &x) {
     }
     ret[i] = w;
   }
-  std::vector<std::string> fin;
+  std::vector<std::wstring> fin;
   for (size_t i = 0; i < ret.size(); i++) {
-    if (ret[i] != "" && ret[i] != ";") fin.push_back(ret[i]);
+    if (ret[i] != L"" && ret[i] != L";") fin.push_back(ret[i]);
   }
   return fin;
 }
@@ -446,53 +416,53 @@ typedef enum var_tp {
   Function = 6,
   Expression = 7,
 } var_tp;
-const std::string getTypeStr(const var_tp &x) {
+const std::wstring getTypeStr(const var_tp &x) {
   switch (x) {
     case Null:
-      return "null";
+      return L"null";
     case Int:
-      return "int";
+      return L"int";
     case Boolean:
-      return "boolean";
+      return L"boolean";
     case String:
-      return "string";
+      return L"string";
     case Array:
-      return "array";
+      return L"array";
     case Object:
-      return "object";
+      return L"object";
     case Function:
-      return "function";
+      return L"function";
     case Expression:
-      return "null";  // no use?
+      return L"null";  // no use?
   }
-  return "null";
+  return L"null";
 }
-const var_tp getStrType(const std::string &x) {
-  if (x == "null") return Null;
-  if (x == "int") return Int;
-  if (x == "boolean") return Boolean;
-  if (x == "string") return String;
-  if (x == "array") return Array;
-  if (x == "Object") return Object;
-  if (x == "function") return Function;
+const var_tp getStrType(const std::wstring &x) {
+  if (x == L"null") return Null;
+  if (x == L"int") return Int;
+  if (x == L"boolean") return Boolean;
+  if (x == L"string") return String;
+  if (x == L"array") return Array;
+  if (x == L"Object") return Object;
+  if (x == L"function") return Function;
   // if(x=="expression")return Expression;
   return Null;
 }
 typedef struct Fn_temp {
-  std::vector<std::string> value;
+  std::vector<std::wstring> value;
   Fn_temp() {}
-  Fn_temp(std::vector<std::string> x) { value = x; }
+  Fn_temp(std::vector<std::wstring> x) { value = x; }
 } Fn_temp;
 typedef class var {
   bool needtoRemove;
 
  public:
   bool isConst;
-  std::string StringValue;
+  std::wstring StringValue;
   std::vector<var> ArrayValue;
-  std::map<std::string, var> ObjectValue;
+  std::map<std::wstring, var> ObjectValue;
   Fn_temp FunctionValue;
-  std::vector<std::string> ExpressionValue;
+  std::vector<std::wstring> ExpressionValue;
   var() {
     tp = Null;
     isConst = true;
@@ -519,13 +489,13 @@ typedef class var {
     isConst = c;
     needtoRemove = false;
   }
-  var(const std::string &x, bool c = true) {
+  var(const std::wstring &x, bool c = true) {
     StringValue = x, tp = String;
     isConst = c;
     needtoRemove = false;
   }
-  var(const char *const x, bool c = true) {
-    StringValue = std::string(x), tp = String;
+  var(const wchar_t *const x, bool c = true) {
+    StringValue = std::wstring(x), tp = String;
     isConst = c;
     needtoRemove = false;
   }
@@ -534,7 +504,7 @@ typedef class var {
     isConst = c;
     needtoRemove = false;
   }
-  var(const std::map<std::string, var> &x, bool c = true) {
+  var(const std::map<std::wstring, var> &x, bool c = true) {
     ObjectValue = x, tp = Object;
     isConst = c;
     needtoRemove = false;
@@ -544,7 +514,7 @@ typedef class var {
     isConst = c;
     needtoRemove = false;
   }
-  var(const std::vector<std::string> &x, bool c = true) {
+  var(const std::vector<std::wstring> &x, bool c = true) {
     ExpressionValue = x, tp = Expression;
     isConst = c;
     needtoRemove = false;
@@ -565,8 +535,8 @@ typedef class var {
         return;
       }
       case Object: {
-        std::map<std::string, var> temp;
-        for (std::map<std::string, var>::const_iterator x =
+        std::map<std::wstring, var> temp;
+        for (std::map<std::wstring, var>::const_iterator x =
                  ObjectValue.cbegin();
              x != ObjectValue.cend(); x++) {
           if (x->second.needtoRemove == false) temp[x->first] = x->second;
@@ -578,45 +548,45 @@ typedef class var {
         return;
     }
   }
-  const std::string toString() const {
-    std::string tmp;
+  const std::wstring toString() const {
+    std::wstring tmp;
     switch (tp) {
       case Null:
-        return "null";
+        return L"null";
       case Int: {
-        if (IntValue == (int)IntValue) return std::to_string((int)IntValue);
-        return std::to_string(IntValue);
+        if (IntValue == (int)IntValue) return std::to_wstring((int)IntValue);
+        return std::to_wstring(IntValue);
       }
       case Boolean:
-        return BooleanValue ? "true" : "false";
+        return BooleanValue ? L"true" : L"false";
       case String: {
-        tmp = "\"";
+        tmp = L"\"";
         for (size_t i = 0; i < StringValue.length(); i++) {
           switch (StringValue[i]) {
-            case '\b': {
-              tmp += "\\b";
+            case L'\b': {
+              tmp += L"\\b";
               break;
             }
-            case '\f': {
-              tmp += "\\f";
+            case L'\f': {
+              tmp += L"\\f";
               break;
             }
-            case '\r': {
-              tmp += "\\r";
+            case L'\r': {
+              tmp += L"\\r";
               break;
             }
-            case '\t': {
-              tmp += "\\t";
+            case L'\t': {
+              tmp += L"\\t";
               break;
             }
-            case '\n': {
-              tmp += "\\n";
+            case L'\n': {
+              tmp += L"\\n";
               break;
             }
-            case '\\':
-            case '\'':
-            case '\"': {
-              tmp += std::string("\\") + StringValue[i];
+            case L'\\':
+            case L'\'':
+            case L'\"': {
+              tmp += std::wstring(L"\\") + StringValue[i];
               break;
             }
             default: {
@@ -625,42 +595,43 @@ typedef class var {
             }
           }
         }
-        return tmp + "\"";
+        return tmp + L"\"";
       }
       case Array: {
-        tmp = "[";
+        tmp = L"[";
         for (size_t i = 0; i < ArrayValue.size(); i++) {
           tmp += ArrayValue[i].toString();
-          if (i + 1 < ArrayValue.size()) tmp += ",";
+          if (i + 1 < ArrayValue.size()) tmp += L",";
         }
-        return tmp + "]";
+        return tmp + L"]";
       }
       case Object: {
-        tmp = "{";
-        for (std::map<std::string, var>::const_iterator it =
+        tmp = L"{";
+        for (std::map<std::wstring, var>::const_iterator it =
                  ObjectValue.cbegin();
              it != ObjectValue.cend(); it++) {
-          tmp += var(it->first).toString() + ":";
+          tmp += var(it->first).toString() + L":";
           tmp += it->second.toString();
-          if ((++std::map<std::string, var>::const_iterator(it)) !=
+          if ((++std::map<std::wstring, var>::const_iterator(it)) !=
               ObjectValue.cend())
-            tmp += ",";
+            tmp += L",";
         }
-        return tmp + "}";
+        return tmp + L"}";
       }
       case Function: {
-        tmp = "{";
+        tmp = L"{";
         for (size_t i = 0; i < FunctionValue.value.size(); i++) {
-          if (FunctionValue.value[i] != "") tmp += FunctionValue.value[i] + ";";
+          if (FunctionValue.value[i] != L"")
+            tmp += FunctionValue.value[i] + L";";
         }
-        if (tmp == "{") tmp += ";";
-        return tmp + "}";
+        if (tmp == L"{") tmp += L";";
+        return tmp + L"}";
       }
       case Expression: {
         return castExpression(ExpressionValue);
       }
     }
-    return "null";
+    return L"null";
   }
   const var convert(const var_tp &type) const {
     if (tp == type) return *this;
@@ -678,7 +649,7 @@ typedef class var {
         if (type == Array) {
           std::vector<var> ret;
           for (size_t i = 0; i < StringValue.length(); i++) {
-            ret.push_back(var(std::string(1, StringValue[i])));
+            ret.push_back(var(std::wstring(1, StringValue[i])));
           }
           return var(ret);
         }
@@ -686,9 +657,9 @@ typedef class var {
       }
       case Array: {
         if (type == Object) {
-          std::map<std::string, var> ret;
+          std::map<std::wstring, var> ret;
           for (size_t i = 0; i < ArrayValue.size(); i++) {
-            ret[std::to_string(i)] = ArrayValue[i];
+            ret[std::to_wstring(i)] = ArrayValue[i];
           }
           return var(ret);
         }
@@ -697,7 +668,7 @@ typedef class var {
       default:
         throw nullptr;
     }
-    throw ConvFail(getTypeStr(tp) + "->" + getTypeStr(type));
+    throw ConvFail(getTypeStr(tp) + L"->" + getTypeStr(type));
   }
   const var operator+(const var &opx) const {
     var ret;
@@ -938,67 +909,67 @@ typedef class var {
     return false;
   }
 } var;
-const var parse(const std::string &x, const bool &isConst = false) {
-  std::string p = clearnull(x);
-  if (p == "") return var(nullptr, isConst);
+const var parse(const std::wstring &x, const bool &isConst = false) {
+  std::wstring p = clearnull(x);
+  if (p == L"") return var(nullptr, isConst);
   try {
     if (isExpression(p) == false) throw nullptr;
   } catch (...) {
     try {
       for (size_t i = 0; i < p.length(); i++) {
-        if (p[i] == '.') {
-          if (p[i + 1] >= '0' && p[i + 1] <= '9')
+        if (p[i] == L'.') {
+          if (p[i + 1] >= L'0' && p[i + 1] <= L'9')
             continue;
           else
             throw nullptr;
         }
       }
-      if (p.find_first_of('.') != std::string::npos ||
-          p.find_first_of('e') != std::string::npos)
+      if (p.find_first_of('.') != std::wstring::npos ||
+          p.find_first_of('e') != std::wstring::npos)
         std::stod(p);
       else
         std::stoi(p, 0, 0);
     } catch (...) {
-      if (p == "null") return var(nullptr, isConst);
-      if (p == "true" || p == "false") return var(p == "true", isConst);
-      if ((p[0] == '\"' && p[p.length() - 1] == '\"') ||
-          (p[0] == '\'' && p[p.length() - 1] == '\'')) {
-        std::string tmp = p.substr(1, p.length() - 2), ret = "";
+      if (p == L"null") return var(nullptr, isConst);
+      if (p == L"true" || p == L"false") return var(p == L"true", isConst);
+      if ((p[0] == L'\"' && p[p.length() - 1] == L'\"') ||
+          (p[0] == L'\'' && p[p.length() - 1] == L'\'')) {
+        std::wstring tmp = p.substr(1, p.length() - 2), ret = L"";
         for (size_t i = 0; i < tmp.length(); i++) {
-          if (tmp[i] == '\\') {
+          if (tmp[i] == L'\\') {
             i++;
             switch (tmp[i]) {
-              case '\"':
-              case '\\':
-              case '\'': {
+              case L'\"':
+              case L'\\':
+              case L'\'': {
                 ret += tmp[i];
                 break;
               }
-              case 'b': {
-                ret += '\b';
+              case L'b': {
+                ret += L'\b';
                 break;
               }
-              case 'f': {
-                ret += '\f';
+              case L'f': {
+                ret += L'\f';
                 break;
               }
-              case 'r': {
-                ret += '\r';
+              case L'r': {
+                ret += L'\r';
                 break;
               }
-              case 't': {
-                ret += '\t';
+              case L't': {
+                ret += L'\t';
                 break;
               }
-              case 'n': {
-                ret += '\n';
+              case L'n': {
+                ret += L'\n';
                 break;
               }
-              case 'e': {
-                ret += '\e';
+              case L'e': {
+                ret += L'\e';
                 break;
               }
-              case 'u': {
+              case L'u': {
                 ret += Unicode2String(tmp.substr(i + 1, 4));
                 i += 4;
                 break;
@@ -1009,48 +980,48 @@ const var parse(const std::string &x, const bool &isConst = false) {
         }
         return var(ret, isConst);
       }
-      if ((p[0] == '{' || p[0] == '[') &&
-          (p[p.length() - 1] == '}' || p[p.length() - 1] == ']')) {
-        std::string key = "", value = "";
-        std::map<std::string, var> ret;
+      if ((p[0] == L'{' || p[0] == L'[') &&
+          (p[p.length() - 1] == L'}' || p[p.length() - 1] == L']')) {
+        std::wstring key = L"", value = L"";
+        std::map<std::wstring, var> ret;
         std::vector<var> ret2;
-        bool isobject = (p[0] == '{');
+        bool isobject = (p[0] == L'{');
         for (size_t i = 1, a = 0; i < p.length() - 1; i++) {
           if (isobject) {
-            if (p[i] != '\"' && p[i] != '\'')
+            if (p[i] != L'\"' && p[i] != L'\'')
               return var(Fn_temp(code_split(p.substr(1, p.length() - 2))),
                          isConst);
             for (bool z = false; i < p.length() - 1; i++) {
-              if (p[i] == '\\')
+              if (p[i] == L'\\')
                 z = !z;
-              else if (p[i] == '\"' || p[i] == '\'')
+              else if (p[i] == L'\"' || p[i] == L'\'')
                 a = colon_judge(p[i], a, z);
               else
                 z = 0;
-              if ((p[i] == '\"' || p[i] == '\'') &&
-                  (p[i - 1] != '{' || p[i - 1] != ',') && a == 0) {
+              if ((p[i] == L'\"' || p[i] == L'\'') &&
+                  (p[i - 1] != L'{' || p[i - 1] != L',') && a == 0) {
                 key += p[i++];
                 break;
               }
               key += p[i];
             }
-            if (p[i] != ':')
+            if (p[i] != L':')
               return var(Fn_temp(code_split(p.substr(1, p.length() - 2))),
                          isConst);
             i++;  //: token
           }
           for (size_t j = 0, z = 0; i < p.length() - 1; i++) {
-            if (p[i] == '\\')
+            if (p[i] == L'\\')
               z = !z;
-            else if (p[i] == '\"' || p[i] == '\'')
+            else if (p[i] == L'\"' || p[i] == L'\'')
               a = colon_judge(p[i], a, z);
             else
               z = 0;
-            if ((p[i] == '(' || p[i] == '{' || p[i] == '[') && a == 0)
+            if ((p[i] == L'(' || p[i] == L'{' || p[i] == L'[') && a == 0)
               j++;
-            else if ((p[i] == ')' || p[i] == '}' || p[i] == ']') && a == 0)
+            else if ((p[i] == L')' || p[i] == L'}' || p[i] == L']') && a == 0)
               j--;
-            if (p[i] == ',' && j == 0 && a == 0)
+            if (p[i] == L',' && j == 0 && a == 0)
               break;
             else
               value += p[i];
@@ -1060,8 +1031,8 @@ const var parse(const std::string &x, const bool &isConst = false) {
             ret2.push_back(parse(value, false));
           } else
             ret2.push_back(parse(value));
-          key = "";
-          value = "";
+          key = L"";
+          value = L"";
         }
         if (isobject)
           return var(ret, isConst);
@@ -1070,13 +1041,13 @@ const var parse(const std::string &x, const bool &isConst = false) {
       }
       return var(genExpression(splitExpression(p)), isConst);
     }
-    if (p.find_first_of('.') == std::string::npos &&
-        p.find_first_of('e') == std::string::npos)
+    if (p.find_first_of('.') == std::wstring::npos &&
+        p.find_first_of('e') == std::wstring::npos)
       return var(std::stoi(p, 0, 0), isConst);
     else
       return var(std::stod(p), isConst);
   }
   return var(genExpression(splitExpression(p)), isConst);
 }
-}  // namespace Variable
+};  // namespace Variable
 #endif

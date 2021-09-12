@@ -13,10 +13,6 @@ This interpreter works fine in **-O3**.
 ```
 $ make build CXXFLAGS='-Os -s -D ENABLE_EXT' # minimal
 $ make build CXXFLAGS='-Os -s' # minimal without extend commands
-$ make build CXXFLAGS='-Os -s -D ENABLE_EXT -D NO_LOCALE' # minimal without locale
-$ make build CXXFLAGS='-Os -s -D NO_LOCALE' # minimal without locale and extend commands
-$ make build CXXFLAGS='-Os -s -D ENABLE_EXT -D FORCE_UTF8' # minimal with force UTF-8 encoding
-$ make build CXXFLAGS='-Os -s -D FORCE_UTF8' # minimal with force UTF-8 encoding and without extend commands
 $ ./lpp --help
 ```
 
