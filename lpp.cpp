@@ -1009,7 +1009,6 @@ int main(int argc, char** argv) {
                                all_scope, this_scope);
     }
   };  // extend internal command:__load__
-  // This cmd is about PIPE.
 #endif
   std::locale::global(std::locale(""));
   std::vector<std::wstring> arg(argc - 1);
