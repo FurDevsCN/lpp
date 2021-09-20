@@ -1,0 +1,23 @@
+#!../lpp
+#####################
+#L++ original sample#
+#    iostream       #
+#####################
+var default_output=load "/bin/echo"; # output stream is set to /bin/echo (linux)
+var cout_stream=function(output=default_output){ #modify argument 'output' to redirect cout.
+  this["_output"]=output;#outputer
+  this["operator<<"]=function(lhs,rhs){ #lhs:this stream rhs:value
+    this["_output"] ["-e",rhs.toString []];
+    return this;# cout<<1<<2<<...
+  };
+}
+const cout=(new cout_stream); #default cout
+const endl="\n"; #default endline
+if (exist arguments),{ #not import?
+  cout<<"C++-like iostream test by nu11ptr";
+  cout<<"Copyright(c) 2021 nu11ptr team.";
+  cout<<"Hint:Use \"import\" to import this library.";
+},{
+  export endl=endl;#export endl as endl
+  export cout=cout;#export cout as cout
+}

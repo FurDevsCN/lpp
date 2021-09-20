@@ -41,25 +41,6 @@ A normal command lambda function should be like this:
 
 ##### Lpp::Lpp::exp_calc
 
-This overload will not modify the scope.
-
-```
-// Use exp_calc without modifications of scope.(Please use this overload as rarely as possible,it will copy the scope,and it is very slow.)
-/*
-const Variable::var &exp : The expression that will be calculated.
-const Variable::var &scope : The current scope.
-const Variable::var &all_scope : The global scope.
-const Variable::var &this_scope : This scope of this object.
-*/
-const Variable::var exp_calc(const Variable::var &exp,
-                               const Variable::var &scope,
-                               const Variable::var &all_scope,
-                               const Variable::var &this_scope,
-                               const bool newObjectIsConst = false) const;
-```
-
-...And this overload will.
-
 ```
 // Use exp_calc with modifications of scope.
 /*
@@ -87,52 +68,54 @@ cmd.exp_calc(Variable::parse(something),scope,all_scope,this_scope);
 This function may modify the scope.
 
 ```
+/*
+const std::wstring& n : the path(expression) that will be accessed.
+Variable::var &scope : the scope.
+Variable::var &all_scope : the global scope.
+Variable::var &this_scope : the "this" scope.
+const size_t &count_dont_parse : Use this to get a path's parent or something.(deprecated and unwanted,will delete in future)
+const bool &nonewobject : If nonewobject==true,it will not create new objects(as far as possible).
+const bool &nonative : If nonative==true,it will not parse native functions,and it will get it's overload's value.
+*/
 Return_Object get_object(const std::wstring &n, Variable::var &scope,
                            Variable::var &all_scope, Variable::var &this_scope,
                            const size_t &count_dont_parse,
-                           const bool &nonewobject) const;
+                           const bool &nonewobject,
+                           const bool &nonative) const;
 ```
 
 You can use it to **get** the value by name.Here is the Return_Object's introduction.
 
 ```
-typedef enum Object_Type {
-	is_pointer = 0, // this value can modify
-  is_const_value = 1, // this value is a const value.
-  is_native_function = 2, // this value is a native function(see #native-function).
+  typedef enum Object_Type {
+    is_pointer = 0,
+    is_const_value = 1,
   } Object_Type;
-typedef enum Object_Errors {
-  member_cant_visit = 0,
-  member_not_exist =
+  typedef enum Object_Errors {
+    member_cant_visit = 0,
+    member_not_exist =
         1,  // only use for null,int,function,expression,array,boolean and
             // native function/members.
-} Object_Errors;
-typedef class Return_Object {
-  Variable::var *value;
-  Variable::var const_value;
-  Variable::var *parent;
-  Variable::var const_parent;
-  Variable::var *this_object;
-  bool isConst;
+  } Object_Errors;
+  typedef class Return_Object {
+    Variable::var *value;
+    Variable::var const_value;
+    Variable::var *parent;
+    Variable::var const_parent;
+    Variable::var *this_object;
+    bool lastIsThis;
+    bool isNative;
 
- public:
-  bool getIsConst() { return isConst; } // if the value is literal or cannot modify,this will return true.
-  Variable::var &getValue() { return *value; } // return got value's reference.
-  Variable::var &getParent() { return *parent; } // return got value's parent.
-  Variable::var getConstValue() { return const_value; } // return got value's const value(recommend).
-  Variable::var getConstParent() { return const_parent; } // return got value's const parent(recommend).
-  Variable::var &getThis() { return *this_object; } // return got value's this object.
-  Object_Type tp;// The type of return's object.
-  Return_Object();
-  Return_Object(const Variable::var &x, Variable::var *p, Variable::var *s);
-  Return_Object(const Variable::var &x, const Variable::var &p,
-                  Variable::var *s);
-  Return_Object(Variable::var *x, Variable::var *p, Variable::var *s);
-  Return_Object(const std::nullptr_t &x, const Variable::var &w,
-                  Variable::var p, Variable::var *s);
-  Return_Object(const std::nullptr_t &x, const Variable::var &w,
-                  Variable::var *p, Variable::var *s);
-} Return_Object;
+   public:
+    const bool &lastThis() const { return lastIsThis; }
+    const bool &native() const { return isNative; }
+    Variable::var &getValue() { return *value; }
+    Variable::var &getParent() { return *parent; }
+    const Variable::var &getConstValue() { return const_value; }
+    const Variable::var &getConstParent() { return const_parent; }
+    Variable::var &getThis() { return *this_object; }
+    Object_Type tp;
+  } Return_Object;
 ```
 
 ##### Variable::var
@@ -167,7 +150,9 @@ format: sample -> public id(private id) : can convert to : ...
 **"hello world" "\u0032"** -> string(String) : can convert to : Array.  
 **\[1,2,3\] \[3,4,5\]** -> array(Array) : can convert to : Object.  
 **{"object":1}** -> object(Object) : can convert to : nothing.  
-**{return 1;}** -> function(Function) : can convert to : nothing.  
+**function(a,b=1){return "hi";}** -> function(Function) : can convert to : nothing.  
+**{return 1;}** -> Unknown(StmtBlock) : can convert to : nothing.  
+**1+1** -> Unknown(Expression) : can convert to : nothing.
 **tips:**You can use **const** command to make sure a literal has const attribute.
 
 ### Commands
@@ -215,7 +200,7 @@ if 0,{throw 1},{throw 2};#it will throw 2.
 
 **switch \[value\],\[\[comp1={...}\],\[comp2={...}\],...,\(default={...}\)\]** : Switches conditions.  
 information\[1\]:If \[value\] is equal to \[comp*n*\],it will execute statement block \[{...}\].  
-information\[2\]:If no statment block uses break command or no statement block matches,it will execute statement block \[default\].  
+information\[2\]:If no statement block uses break command or no statement block matches,it will execute statement block \[default\].  
 sample\[1\]:
 
 ```
@@ -241,7 +226,7 @@ sample\[1\]:
 ```
 var a=4,b=0;
 while b!=a,{
-  b+=1;
+  b++;
 };#it will repeat 4 times.
 ```
 
@@ -251,8 +236,8 @@ sample\[1\]:
 
 ```
 var a=4,b=0;
-for (var i=0;i!=a;i+=1),{
-    b+=1;
+for (var i=0;i!=a;i++),{
+    b++;
 };#after this,variable 'b' will be 4.
 ```
 
@@ -280,22 +265,19 @@ return 0;#returns 0.
 sample\[1\]:
 
 ```
-const fn={
-    this["a"]=arguments[0];
+const fn=function(a){
+    this["a"]=a;
 };
 var a=(new fn,[1]);
 #a = {"a":1}
 ```
 
-**fn \[arguments\]** : Calls function \[fn\] and set variable 'arguments' to \[arguments\].  
+**fn \[arguments\]** : Calls function \[fn\] and set variable 'arguments'\(and function argument list\) to \[arguments\].  
 sample\[1\]:
 
 ```
-var fn={
-    if arguments.length!=1,{
-        return -1;
-    };
-    return arguments[0];
+var fn=function(a=-1){
+    return a;
 };
 var a,b;
 a=(fn []);#a=-1
@@ -309,12 +291,12 @@ sample\[1\]:
 throw 0;#it will throw 0
 ```
 
-**try \[func\],catch=\[ExceptionFunc\]** : If \[func\] throws any Exception,\[ExceptionFunc\] will catch it(Exception is stored in variable 'err').  
+**try \[func\],catch=\[ExceptionFunc\]** : If \[func\] throws any Exception,\[ExceptionFunc\] will catch it(you can use **what** command to get Exception).  
 sample\[1\]:
 
 ```
-var errors_last;
-try {throw "error"},catch={errors_last=err};#errors_last="error"
+var err;
+try {throw "error"},catch={err=(what)};#errt="error"
 ```
 
 **typeof \[var\]** returns the type of \[var\].  
@@ -324,29 +306,48 @@ sample\[1\]:
 var a=(typeof {});#a="object"
 ```
 
-**eval \[str\]** Executes \[str\] and returns value.str must be a String.  
+**eval \[str\]** Executes \[str\] and returns value.  
 sample\[1\]:
 
 ```
 var a=(eval "1");#a=1
+var b=(eval {});#b={}
 ```
 
-### Extend Commands(use ENABLE_EXT to enable)
-
-**load \[path\]** Bind path as a function.You can call function to call it(with arguments).path **must** be String.  
+**what** Gets the error\(use only in **catch**\).  
 sample\[1\]:
 
 ```
-var a=(load "/bin/echo");
-a ["Hello World!"];# Hello World!
+var s;
+try {throw 1;},catch={s=(what)+1;}
+# s = 2
 ```
 
-**import \[path\]** import path as a L++ script.It will be a object and you can use **member operator** to access it's member.path **must** be String.  
+**char \[ch\]** Allows you convert string<->int.If ch is int,convert it to string;If ch is string,convert it to int.  
+sample\[1\]:
+
+```
+var s;
+s=(char 97);# s = "a"
+s=(char 'a');# s = 97
+```
+
+**import \[path\]** Imports path as a L++ script.It will be an object and you can use **member operator** to access it's member.path **must** be String.  
 sample\[1\]:
 
 ```
 var a=(import "test.lpp");
 a.test [];#...
+```
+
+### Extend Commands(use ENABLE_EXT to enable)
+
+**load \[path\]** Binds path as a function.You can call function to call it(with arguments).path **must** be String.  
+sample\[1\]:
+
+```
+var a=(load "/bin/echo");
+a ["Hello World!"];# Hello World!
 ```
 
 ### Native Members
@@ -362,36 +363,33 @@ using **object.\[the name of the member\]** or **object\[\["the name of the memb
 **insert\(index:Int,elem:Any\) Null -> can use on Array** : insert a element before the index.  
 **join\(str:String\) Null -> can use on Array** : put all the elements in the array into a string,split with str.  
 **toString\(\) : String -> can use on Any** : get the variable's string.  
-**substr\(start,\(end=-1\)\) String -> can use on String** : intercept the string from start,count end.
+**substr\(start,\(cnt=-1\)\) String -> can use on String** : intercept the string from start,count cnt.
+
+### Overload
+
+You can use this\["..."\] to override a native function.  
+You can define operator... to overload a operate\(+,-,\*,etc.\)
 
 ### Sample
 
 sample\[a+b\]:
 
 ```
-const fn={
-    if arguments.length!=2,{
-        throw "failed";
-    }
-    return arguments[0]+arguments[1];
+const fn=function(a,b){
+    return a+b;
 };
 var a=1,b=2;
-var final;
-final=(fn [a,b]);
-return final;#3
+return (fn [a,b]);#3
 ```
 
 sample\[Fibonacci sequence \(recursion\)\]:
 
 ```
-const fib={
-    if arguments==[0]||arguments==[1],{
-      return arguments;
-    }
-    var x,y;
-    x=(fib [arguments[0]-1]);
-    y=(fib [arguments[0]-2]);
-    return x+y;
+const fib=function(x){
+    if x==0||x==1,{
+      return x;
+    };
+    return (fib [x-1])+(fib [x-2]);
 };
 var x;
 x=(fib [10]);
@@ -401,14 +399,14 @@ x=(fib [10]);
 sample\[Fibonacci sequence \(not recursion\)\]:
 
 ```
-const fib={
-    var a=[0,1,1],n=arguments[0];
-    if n<0,{throw "failed!";}
+const fib=function(n){
+    var a=[0,1,1];
+    if n<0,{throw "failed!";};
     if n>=3,{
         for (var i=3;i<=n;i++),{
             a[i]=(a[i-1]+a[i-2]);
         }
-    }
+    };
     return a[n];
 };
 var x;

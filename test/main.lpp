@@ -1,0 +1,10 @@
+#!../lpp
+var std=(import "iostream");
+#main function start
+const main=function(argc,argv){
+  std.cout<<"Hello World!"<<"This is the official example!";
+  std.cout<<"ようこそ、世界へ！"<<"これは公式の見本です。";
+  std.cout<<"你好，世界！"<<"这是官方制作的样例。";
+  return 0;#return value
+}
+return (main [arguments.length,arguments]);

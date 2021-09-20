@@ -6,7 +6,7 @@ Copyright(c) 2021 nu11ptr team.
 ## What is this
 
 This is a user manual about L++ interpreter\(by nu11ptr team\).  
-This interpreter works fine in **-O3**.
+This interpreter works fine in **-O3** and **--std=c++0x**\(**--std=c++11**\).
 
 ## How to make
 
