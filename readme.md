@@ -27,7 +27,8 @@ A normal command lambda function should be like this:
 ```
 [your_capture](const Lpp::Lpp& cmd, Variable::var& scope,
                        Variable::var& all_scope,
-                       Variable::var& this_scope) -> Lpp::Return_Value {
+                       Variable::var& this_scope,
+                       StackType& runstack) -> Lpp::Return_Value {
 						   //something...
 					   };
 ```
@@ -48,10 +49,12 @@ const Variable::var &exp : The expression that will be calculated.
 Variable::var &scope : The current scope.
 Variable::var &all_scope : The global scope.
 Variable::var &this_scope : This scope of this object.
+StackType& stack : The stack of the execution.
 */
 const Variable::var exp_calc(const Variable::var &exp, Variable::var &scope,
                                Variable::var &all_scope,
                                Variable::var &this_scope,
+                               StackType& runstack,
                                const bool newObjectIsConst = false) const;
 ```
 
@@ -73,15 +76,16 @@ const std::wstring& n : the path(expression) that will be accessed.
 Variable::var &scope : the scope.
 Variable::var &all_scope : the global scope.
 Variable::var &this_scope : the "this" scope.
-const size_t &count_dont_parse : Use this to get a path's parent or something.(deprecated and unwanted,will delete in future)
-const bool &nonewobject : If nonewobject==true,it will not create new objects(as far as possible).
-const bool &nonative : If nonative==true,it will not parse native functions,and it will get it's overload's value.
+StackType& runstack : The stack of execution.
+const bool nonewobject : If nonewobject==true,it will not create new objects(as far as possible).
+const bool nonative : If nonative==true,it will not parse native functions,and it will get it's overload's value.
 */
 Return_Object get_object(const std::wstring &n, Variable::var &scope,
-                           Variable::var &all_scope, Variable::var &this_scope,
-                           const size_t &count_dont_parse,
-                           const bool &nonewobject,
-                           const bool &nonative) const;
+                           Variable::var &all_scope,
+                           Variable::var &this_scope,
+                           StackType& runstack,
+                           const bool nonewobject,
+                           const bool nonative) const;
 ```
 
 You can use it to **get** the value by name.Here is the Return_Object's introduction.
@@ -107,8 +111,8 @@ You can use it to **get** the value by name.Here is the Return_Object's introduc
     bool isNative;
 
    public:
-    const bool &lastThis() const { return lastIsThis; }
-    const bool &native() const { return isNative; }
+    const bool lastThis() const { return lastIsThis; }
+    const bool native() const { return isNative; }
     Variable::var &getValue() { return *value; }
     Variable::var &getParent() { return *parent; }
     const Variable::var &getConstValue() { return const_value; }
@@ -127,9 +131,9 @@ Please see **var.h**::Variable::var() for more informations.
 ```
 /*
 const std::wstring &x : The string that will be parsed.
-const bool& isConst : The parsed value's isConst property.
+const bool isConst : The parsed value's isConst property.
 */
-const var parse(const std::wstring &x, const bool& isConst = false);
+const var parse(const std::wstring &x, const bool isConst = false);
 ```
 
 Parse the string to Variable.  
@@ -146,7 +150,7 @@ L++ have these types:
 format: sample -> public id(private id) : can convert to : ...  
 **null** -> null(Null) : can convert to : nothing.  
 **1 0xf 1.2** -> int(Int) : can convert to : Boolean.  
-**true false** -> boolean(Boolean) : can convert to : Int.  
+**true false** -> bool(Boolean) : can convert to : Int.  
 **"hello world" "\u0032"** -> string(String) : can convert to : Array.  
 **\[1,2,3\] \[3,4,5\]** -> array(Array) : can convert to : Object.  
 **{"object":1}** -> object(Object) : can convert to : nothing.  
@@ -155,6 +159,13 @@ format: sample -> public id(private id) : can convert to : ...
 **1+1** -> Unknown(Expression) : can convert to : nothing.
 **tips:**You can use **const** command to make sure a literal has const attribute.
 
+### Type declaration keyword
+You can use **\[type\] \[value\]** to convert a value to another value.
+sample\[1\]:
+```
+string "1";#string
+string 1;#string
+```
 ### Commands
 
 These commands are the basic L++ interpreter supports.  
@@ -261,7 +272,7 @@ sample\[1\]:
 return 0;#returns 0.
 ```
 
-**new \[fn\]\(,arguments=[]\)** : Puts the function in the object and execute it.  
+**new \[fn\]\(,arguments=[]\)** : Puts the function in the object and execute it.(_arguments_ must be an **array** and **cannot** be a variable.)  
 sample\[1\]:
 
 ```
@@ -272,7 +283,18 @@ var a=(new fn,[1]);
 #a = {"a":1}
 ```
 
-**fn \[arguments\]** : Calls function \[fn\] and set variable 'arguments'\(and function argument list\) to \[arguments\].  
+New feature after **1.4.1-20210921_beta**:If you type a **new**,you can get the new status of this function.  
+sample\[2\]:
+
+```
+var t=function(){
+  this["a"]=(new);
+}
+var s=(new);#false
+var q=(new t);#{"a":true}
+```
+
+**fn \[arguments\]** : Calls function \[fn\] and set variable 'arguments'\(and function argument list\) to \[arguments\].(_arguments_ must be an **array** and **cannot** be a variable.)  
 sample\[1\]:
 
 ```
@@ -340,6 +362,29 @@ var a=(import "test.lpp");
 a.test [];#...
 ```
 
+**export \[name\]=\[value\]** Exports value as a name.It will be visibility in the object.  
+sample\[1\]:
+
+```
+#test.lpp
+export a=1;
+#main.lpp
+var a=(import "test.lpp");
+a.a;#1
+```
+
+New feature after **1.4.1-20210921_beta**:If you type a **export**,you can get the export status of this script.  
+sample\[2\]:
+
+```
+#test.lpp
+export t=(export);
+#main.lpp
+var a=(import "test.lpp");
+var b=(export);#false
+a.t;#true
+```
+
 ### Extend Commands(use ENABLE_EXT to enable)
 
 **load \[path\]** Binds path as a function.You can call function to call it(with arguments).path **must** be String.  
@@ -356,7 +401,6 @@ using **object.\[the name of the member\]** or **object\[\["the name of the memb
 **keys : Array -> can use on Object** : get the object's keys.  
 **length : Int -> can use on Array/String** : get the string/array's length.  
 **isConst : Boolean -> can use on Any** : get the variable's operability.  
-**convert\(new_type:String\) : Any -> can use on Any** : convert variable to new type.  
 **push\(elem:Any\) : Null -> can use on Array** : push a element to the array.  
 **pop\(\) : Null -> can use on Array** : pop a element from the array.  
 **resize\(new_size:Int\) Null -> can use on Array** : resize the array.  

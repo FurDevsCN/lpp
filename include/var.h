@@ -89,8 +89,9 @@ const bool isExpression(const std::wstring &p) {
       j++;
     else if ((p[i] == L')' || p[i] == L'}' || p[i] == L']') && a == 0)
       j--;
-    else if (get_op_priority(std::wstring(1, p[i])) != -1 && i > 0 &&
-             p[i - 1] != L'e' && p[i - 1] != L'E' && a == 0 && j == 0)
+    else if (get_op_priority(std::wstring(1, p[i])) != -1 &&
+             (i == 0 || (p[i - 1] != L'e' && p[i - 1] != L'E')) && a == 0 &&
+             j == 0)
       return true;
   }
   return false;
@@ -188,6 +189,7 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
           temp += p[i];
         break;
       }
+      case L'+':
       case L'-': {
         if (a == 0 && f == 0 &&
             (((!ret.empty()) && get_op_priority(ret[ret.size() - 1]) != -1) ||
@@ -209,7 +211,6 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
       }
       case L'~':
       case L'!':
-      case L'+':
       case L'*':
       case L'/':
       case L',':
@@ -219,11 +220,12 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
             ret.push_back(temp);
             temp = L"";
           }
-          if (ret.empty()) throw ExprErr(L"assert ret.empty()!=true failed");
-          if (p[i] == L'+' &&
-              ret[ret.size() - 1][ret[ret.size() - 1].length() - 1] == L'+') {
-            ret[ret.size() - 1] += L'+';
-            break;
+          if (p[i] == L'+') {
+            if (ret.empty()) throw ExprErr(L"assert ret.empty()!=true failed");
+            if (ret[ret.size() - 1][ret[ret.size() - 1].length() - 1] == L'+') {
+              ret[ret.size() - 1] += L'+';
+              break;
+            }
           }
           x = true;
           ret.push_back(std::wstring(1, p[i]));
@@ -428,7 +430,7 @@ const std::wstring getTypeStr(const var_tp &x) {
     case Int:
       return L"int";
     case Boolean:
-      return L"boolean";
+      return L"bool";
     case String:
       return L"string";
     case Array:
@@ -439,19 +441,16 @@ const std::wstring getTypeStr(const var_tp &x) {
       return L"function";
     default:
       throw ExprErr(L"This type cannot convert to string");
-      // case Expression:
-      //   return L"null";  // no use?
   }
 }
 const var_tp getStrType(const std::wstring &x) {
   if (x == L"null") return Null;
   if (x == L"int") return Int;
-  if (x == L"boolean") return Boolean;
+  if (x == L"bool") return Boolean;
   if (x == L"string") return String;
   if (x == L"array") return Array;
-  if (x == L"Object") return Object;
+  if (x == L"object") return Object;
   if (x == L"function") return Function;
-  // if(x=="expression")return Expression;
   throw ExprErr(L"This type cannot convert from string");
 }
 const std::vector<std::wstring> splitBy(const std::wstring &x,
@@ -525,58 +524,58 @@ typedef class var {
     isConst = true;
     needtoRemove = false;
   }
-  var(const bool &x, bool c = true) {
+  var(const bool x, bool c = true) {
     tp = Boolean;
     BooleanValue = x;
     isConst = c;
     needtoRemove = false;
   }
-  var(const std::nullptr_t &, const bool &c = true) {
+  var(const std::nullptr_t &, const bool c = true) {
     tp = Null;
     isConst = c;
     needtoRemove = false;
   }
-  var(const int &x, const bool &c = true) {
+  var(const int &x, const bool c = true) {
     IntValue = x, tp = Int;
     isConst = c;
     needtoRemove = false;
   }
-  var(const double &x, const bool &c = true) {
+  var(const double &x, const bool c = true) {
     IntValue = x, tp = Int;
     isConst = c;
     needtoRemove = false;
   }
-  var(const std::wstring &x, const bool &c = true) {
+  var(const std::wstring &x, const bool c = true) {
     StringValue = x, tp = String;
     isConst = c;
     needtoRemove = false;
   }
-  var(const wchar_t *const &x, const bool &c = true) {
+  var(const wchar_t *const x, const bool c = true) {
     StringValue = std::wstring(x), tp = String;
     isConst = c;
     needtoRemove = false;
   }
-  var(const std::vector<var> &x) {
+  var(const std::vector<var> &x, const bool c = true) {
     ArrayValue = x, tp = Array;
-    isConst = false;
+    isConst = c;
     needtoRemove = false;
   }
-  var(const std::map<std::wstring, var> &x) {
+  var(const std::map<std::wstring, var> &x, const bool c = true) {
     ObjectValue = x, tp = Object;
-    isConst = false;
+    isConst = c;
     needtoRemove = false;
   }
-  var(const Stmt_temp &x, const bool &c = true) {
+  var(const Stmt_temp &x, const bool c = true) {
     StmtValue = x, tp = StmtBlock;
     isConst = c;
     needtoRemove = false;
   }
-  var(const Func_temp &x, const bool &c = true) {
+  var(const Func_temp &x, const bool c = true) {
     FunctionValue = x, tp = Function;
     isConst = c;
     needtoRemove = false;
   }
-  var(const std::vector<std::wstring> &x, const bool &c = true) {
+  var(const std::vector<std::wstring> &x, const bool c = true) {
     ExpressionValue = x, tp = Expression;
     isConst = c;
     needtoRemove = false;
@@ -759,6 +758,21 @@ typedef class var {
       switch (tp) {
         case Int: {
           return -IntValue;
+        }
+        case Boolean: {
+          return -BooleanValue;
+        }
+        default: {
+          throw nullptr;
+        }
+      }
+    } else if (op == L"+") {
+      switch (tp) {
+        case Int: {
+          return IntValue;
+        }
+        case Boolean: {
+          return BooleanValue;
         }
         default: {
           throw nullptr;
@@ -991,7 +1005,7 @@ typedef class var {
     return nullptr;
   }
 } var;
-const var parse(const std::wstring &x, const bool &isConst = false) {
+const var parse(const std::wstring &x, const bool isConst = false) {
   std::wstring p = clearnull(x);
   if (p == L"") return var(nullptr, isConst);
   try {
@@ -1201,9 +1215,9 @@ const var parse(const std::wstring &x, const bool &isConst = false) {
           value = L"";
         }
         if (isobject)
-          return ret;
+          return var(ret,isConst);
         else
-          return ret2;
+          return var(ret2,isConst);
       }
       return var(genExpression(splitExpression(p)), isConst);
     }
