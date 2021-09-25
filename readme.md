@@ -27,8 +27,7 @@ A normal command lambda function should be like this:
 ```
 [your_capture](const Lpp::Lpp& cmd, Variable::var& scope,
                        Variable::var& all_scope,
-                       Variable::var& this_scope,
-                       StackType& runstack) -> Lpp::Return_Value {
+                       Variable::var& this_scope) -> Lpp::Return_Value {
 						   //something...
 					   };
 ```
@@ -49,12 +48,10 @@ const Variable::var &exp : The expression that will be calculated.
 Variable::var &scope : The current scope.
 Variable::var &all_scope : The global scope.
 Variable::var &this_scope : This scope of this object.
-StackType& stack : The stack of the execution.
 */
 const Variable::var exp_calc(const Variable::var &exp, Variable::var &scope,
                                Variable::var &all_scope,
                                Variable::var &this_scope,
-                               StackType& runstack,
                                const bool newObjectIsConst = false) const;
 ```
 
@@ -76,14 +73,12 @@ const std::wstring& n : the path(expression) that will be accessed.
 Variable::var &scope : the scope.
 Variable::var &all_scope : the global scope.
 Variable::var &this_scope : the "this" scope.
-StackType& runstack : The stack of execution.
 const bool nonewobject : If nonewobject==true,it will not create new objects(as far as possible).
 const bool nonative : If nonative==true,it will not parse native functions,and it will get it's overload's value.
 */
 Return_Object get_object(const std::wstring &n, Variable::var &scope,
                            Variable::var &all_scope,
                            Variable::var &this_scope,
-                           StackType& runstack,
                            const bool nonewobject,
                            const bool nonative) const;
 ```

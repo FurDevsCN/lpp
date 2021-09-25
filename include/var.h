@@ -90,8 +90,8 @@ const bool isExpression(const std::wstring &p) {
     else if ((p[i] == L')' || p[i] == L'}' || p[i] == L']') && a == 0)
       j--;
     else if (get_op_priority(std::wstring(1, p[i])) != -1 &&
-             (i == 0 || (p[i - 1] != L'e' && p[i - 1] != L'E')) && a == 0 &&
-             j == 0)
+             (i == 0 || (p[i - 1] != L'e' && p[i - 1] != L'E')) &&
+             (i != 0 || p[i] != L'-') && a == 0 && j == 0)
       return true;
   }
   return false;
@@ -191,10 +191,10 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
       }
       case L'+':
       case L'-': {
-        if (a == 0 && f == 0 &&
-            (((!ret.empty()) && get_op_priority(ret[ret.size() - 1]) != -1) ||
-             (i == 0 || p[i - 1] == L'e' || p[i - 1] == L'E')))
-          temp += p[i];  // ret[ret.size()-1]+=p[i];
+        if (a == 0 && f == 0 && (!ret.empty()) &&
+            get_op_priority(ret[ret.size() - 1]) != -1 &&
+            ret[ret.size() - 1] != L")")
+          temp += p[i];
         else if (a == 0 && f == 0 && x) {
           if (ret.empty()) throw ExprErr(L"assert ret.empty()!=true failed");
           ret[ret.size() - 1] += p[i];
@@ -234,7 +234,9 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
         break;
       }
       case L'(': {
-        if (temp == L"function" && a == 0 && f == 0) {
+        if (temp.substr(temp.length() < 8 ? 0 : temp.length() - 8, 8) ==
+                L"function" &&
+            a == 0 && f == 0) {
           temp += L'(';
           x = true;
           f++;
@@ -251,7 +253,9 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
         break;
       }
       case L')': {
-        if (temp.substr(0, 9) == L"function(" && a == 0 && f == 1 && x) {
+        size_t pos = temp.find_last_of(' ');
+        if (pos == std::string::npos) pos = 0;
+        if (temp.substr(pos==0?0:pos+1, 9) == L"function(" && a == 0 && f == 1 && x) {
           temp += L')';
           x = false;
           f--;
@@ -276,15 +280,6 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
       case L']': {
         if (a == 0) f--;
         temp += p[i];
-        break;
-      }
-      case L' ': {
-        if (a == 0 && f == 0 &&
-            (i + 1 == p.length() || (p[i + 1] != L'[' && p[i + 1] != L'{' &&
-                                     p[i + 1] != L'\'' && p[i + 1] != L'\"')))
-          break;
-        else
-          temp += p[i];
         break;
       }
       default: {
@@ -328,6 +323,7 @@ const std::string WString2String(const std::wstring &s) {
 }
 const std::wstring clearnull(const std::wstring &x) {
   std::wstring tmp;
+  bool have_exp = true;
   for (size_t i = 0, a = 0, z = 0, j = 0; i < x.length(); i++) {
     if (x[i] == L'\\')
       z = !z;
@@ -341,13 +337,18 @@ const std::wstring clearnull(const std::wstring &x) {
       continue;
     else if (x[i] == L' ' && a == 0 && j == 0 &&
              (i + 1 == x.length() ||
-              (x[i + 1] != L'[' && x[i + 1] != L'{' && x[i + 1] != L'\'' &&
-               x[i + 1] != L'\"'))) {
+              (x[i + 1] != L'[' && x[i + 1] != L'{' && x[i + 1] != L'(' &&
+               x[i + 1] != L'\'' && x[i + 1] != L'\"') || have_exp) && (
+                 i + 1 == x.length() ||
+                 (get_op_priority(std::wstring(1, x[i + 1])) != -1 ||
+                  x[i + 1] == L' '))) {
+      if (have_exp && x[i + 1] != L' ') have_exp = false;
       continue;
     } else if ((x[i] == L'[' || x[i] == L'{' || x[i] == L'(') && a == 0)
       j++;
     else if ((x[i] == L']' || x[i] == L'}' || x[i] == L')') && a == 0)
       j--;
+    if (get_op_priority(std::wstring(1, x[i])) != -1) have_exp = true;
     tmp += x[i];
   }
   return tmp;
@@ -1215,9 +1216,9 @@ const var parse(const std::wstring &x, const bool isConst = false) {
           value = L"";
         }
         if (isobject)
-          return var(ret,isConst);
+          return var(ret, isConst);
         else
-          return var(ret2,isConst);
+          return var(ret2, isConst);
       }
       return var(genExpression(splitExpression(p)), isConst);
     }

@@ -11,8 +11,7 @@ This interpreter works fine in **-O3** and **--std=c++0x**\(**--std=c++11**\).
 ## How to make
 
 ```
-$ make build CXXFLAGS='-Os -s -D ENABLE_EXT' # minimal
-$ make build CXXFLAGS='-Os -s' # minimal without extend commands
+$ make build # minimal
 $ ./lpp --help
 ```
 
