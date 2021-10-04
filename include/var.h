@@ -194,7 +194,7 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
         if (a == 0 && f == 0 && (!ret.empty()) &&
             get_op_priority(ret[ret.size() - 1]) != -1 &&
             ret[ret.size() - 1] != L")")
-          temp += p[i];
+          ret[ret.size() - 1] += p[i];
         else if (a == 0 && f == 0 && x) {
           if (ret.empty()) throw ExprErr(L"assert ret.empty()!=true failed");
           ret[ret.size() - 1] += p[i];
@@ -234,9 +234,7 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
         break;
       }
       case L'(': {
-        if (temp.substr(temp.length() < 8 ? 0 : temp.length() - 8, 8) ==
-                L"function" &&
-            a == 0 && f == 0) {
+        if (temp != L"" && a == 0 && f == 0) {
           temp += L'(';
           x = true;
           f++;
@@ -253,9 +251,7 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
         break;
       }
       case L')': {
-        size_t pos = temp.find_last_of(' ');
-        if (pos == std::string::npos) pos = 0;
-        if (temp.substr(pos==0?0:pos+1, 9) == L"function(" && a == 0 && f == 1 && x) {
+        if (temp != L"" && a == 0 && f == 1 && x) {
           temp += L')';
           x = false;
           f--;
@@ -292,10 +288,14 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
   if (f != 0) throw ExprErr(L"f!=0");
   if (a != 0) throw ExprErr(L"a!=0");
   if (temp != L"") ret.push_back(temp);
+  if (get_op_priority(ret[ret.size() - 1]) != -1 &&
+      ret[ret.size() - 1] != L"--" && ret[ret.size() - 1] != L"++" &&
+      ret[ret.size() - 1] != L")")
+    throw ExprErr(L"got a unexpected operator at EOL");
   return ret;
 }
-const int Hex2Dec(const std::wstring &m) {
-  int l;
+const size_t Hex2Dec(const std::wstring &m) {
+  size_t l;
   l = std::stoi(m, 0, 16);
   return l;
 }
@@ -321,8 +321,24 @@ const std::string WString2String(const std::wstring &s) {
     t.resize(q);
   return t;
 }
-const std::wstring clearnull(const std::wstring &x) {
-  std::wstring tmp;
+const std::wstring trim(const std::wstring& p) {
+  std::wstring x=p;
+  x.erase(0, x.find_first_not_of(' '));
+  x.erase(x.find_last_not_of(' ') + 1);
+  x.erase(0, x.find_first_not_of('\r'));
+  x.erase(x.find_last_not_of('\r') + 1);
+  x.erase(0, x.find_first_not_of('\n'));
+  x.erase(x.find_last_not_of('\n') + 1);
+  x.erase(0, x.find_first_not_of('\t'));
+  x.erase(x.find_last_not_of('\t') + 1);
+  x.erase(0, x.find_first_not_of('\v'));
+  x.erase(x.find_last_not_of('\v') + 1);
+  x.erase(0, x.find_first_not_of('\f'));
+  x.erase(x.find_last_not_of('\f') + 1);
+  return x;
+}
+const std::wstring clearnull(const std::wstring& p) {
+  std::wstring x=trim(p),tmp;
   bool have_exp = true;
   for (size_t i = 0, a = 0, z = 0, j = 0; i < x.length(); i++) {
     if (x[i] == L'\\')
@@ -338,10 +354,11 @@ const std::wstring clearnull(const std::wstring &x) {
     else if (x[i] == L' ' && a == 0 && j == 0 &&
              (i + 1 == x.length() ||
               (x[i + 1] != L'[' && x[i + 1] != L'{' && x[i + 1] != L'(' &&
-               x[i + 1] != L'\'' && x[i + 1] != L'\"') || have_exp) && (
-                 i + 1 == x.length() ||
-                 (get_op_priority(std::wstring(1, x[i + 1])) != -1 ||
-                  x[i + 1] == L' '))) {
+               x[i + 1] != L'\'' && x[i + 1] != L'\"') ||
+              have_exp) &&
+             (i + 1 == x.length() ||
+              get_op_priority(std::wstring(1, x[i + 1])) != -1 ||
+              x[i + 1] == L' ')) {
       if (have_exp && x[i + 1] != L' ') have_exp = false;
       continue;
     } else if ((x[i] == L'[' || x[i] == L'{' || x[i] == L'(') && a == 0)
@@ -641,6 +658,10 @@ typedef class var {
               tmp += L"\\t";
               break;
             }
+            case L'\v': {
+              tmp += L"\\v";
+              break;
+            }
             case L'\0': {
               tmp += L"\\0";
               break;
@@ -727,6 +748,12 @@ typedef class var {
             ret[i] = std::wstring(1, StringValue[i]);
           }
           return ret;
+        } else if (type == Int) {
+          if (StringValue.find_first_of('.') == std::wstring::npos &&
+              StringValue.find_first_of('e') == std::wstring::npos)
+            return std::stoi(StringValue, 0, 0);
+          else
+            return std::stod(StringValue);
         }
         break;
       }
@@ -735,6 +762,18 @@ typedef class var {
           std::map<std::wstring, var> ret;
           for (size_t i = 0; i < ArrayValue.size(); i++) {
             ret[std::to_wstring(i)] = ArrayValue[i];
+          }
+          return ret;
+        }
+        break;
+      }
+      case Object: {
+        if (type == Array) {
+          std::vector<var> ret;
+          for (std::map<std::wstring, var>::const_iterator i =
+                   ObjectValue.cbegin();
+               i != ObjectValue.cend(); i++) {
+            ret.push_back(i->first);
           }
           return ret;
         }
@@ -1062,6 +1101,10 @@ const var parse(const std::wstring &x, const bool isConst = false) {
                 ret += L'\t';
                 break;
               }
+              case L'v': {
+                ret += L'\t';
+                break;
+              }
               case L'n': {
                 ret += L'\n';
                 break;
@@ -1155,65 +1198,23 @@ const var parse(const std::wstring &x, const bool isConst = false) {
       }
       if ((p[0] == L'{' || p[0] == L'[') &&
           (p[p.length() - 1] == L'}' || p[p.length() - 1] == L']')) {
-        std::wstring key = L"", value = L"";
+        std::vector<std::wstring> temp =
+            splitBy(clearnull(p.substr(1, p.length() - 2)), ',');
         std::map<std::wstring, var> ret;
         std::vector<var> ret2;
         bool isobject = (p[0] == L'{');
-        for (size_t i = 1, a = 0; i < p.length() - 1; i++) {
+        for (size_t i = 0; i < temp.size(); i++) {
           if (isobject) {
-            if (p[i] != L'\"' && p[i] != L'\'' && p[p.length() - 1] == L'}')
+            std::vector<std::wstring> temp2 = splitBy(clearnull(temp[i]), ':');
+            if (temp2.size() != 2)
               return var(
                   var::Stmt_temp(code_split(p.substr(1, p.length() - 2))),
                   isConst);
-            for (bool z = false; i < p.length() - 1; i++) {
-              if (p[i] == L'\\')
-                z = !z;
-              else if (p[i] == L'\"' && !z) {
-                if (a == 0 || a == 1) a = !a;
-              } else if (p[i] == L'\'' && !z) {
-                if (a == 0 || a == 2) a = ((!a) == 1 ? 2 : 0);
-              } else
-                z = 0;
-              if ((p[i] == L'\"' || p[i] == L'\'') &&
-                  (p[i - 1] != L'{' || p[i - 1] != L',') && a == 0) {
-                key += p[i++];
-                break;
-              }
-              key += p[i];
-            }
-            if (p[i] != L':' && p[p.length() - 1] == L'}')
-              return var(
-                  var::Stmt_temp(code_split(p.substr(1, p.length() - 2))),
-                  isConst);
-            i++;  //: token
-          }
-          for (size_t j = 0, z = 0; i < p.length() - 1; i++) {
-            if (p[i] == L'\\')
-              z = !z;
-            else if (p[i] == L'\"' && !z) {
-              if (a == 0 || a == 1) a = !a;
-            } else if (p[i] == L'\'' && !z) {
-              if (a == 0 || a == 2) a = ((!a) == 1 ? 2 : 0);
-            } else
-              z = 0;
-            if ((p[i] == L'(' || p[i] == L'{' || p[i] == L'[') && a == 0)
-              j++;
-            else if ((p[i] == L')' || p[i] == L'}' || p[i] == L']') && a == 0)
-              j--;
-            if (p[i] == L',' && j == 0 && a == 0)
-              break;
-            else
-              value += p[i];
-          }
-          if (value == L"")
-            return var(genExpression(splitExpression(p)), isConst);
-          if (isobject) ret[parse(key).StringValue] = parse(value);
-          if (!isobject) {
-            ret2.push_back(parse(value, false));
+            var t = parse(temp2[0]);
+            if (t.tp != String) throw ExprErr(L"Object's key must be a string");
+            ret[Variable::parse(temp2[0]).StringValue] = parse(temp2[1], false);
           } else
-            ret2.push_back(parse(value));
-          key = L"";
-          value = L"";
+            ret2.push_back(parse(temp[i], false));
         }
         if (isobject)
           return var(ret, isConst);

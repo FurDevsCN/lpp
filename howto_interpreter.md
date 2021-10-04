@@ -12,6 +12,7 @@ This interpreter works fine in **-O3** and **--std=c++0x**\(**--std=c++11**\).
 
 ```
 $ make build # minimal
+$ make debug # don't use this,only for debug
 $ ./lpp --help
 ```
 

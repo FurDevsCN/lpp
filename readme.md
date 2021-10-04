@@ -132,7 +132,7 @@ const var parse(const std::wstring &x, const bool isConst = false);
 ```
 
 Parse the string to Variable.  
-**Warning** The literal string **{}** is an Object,not a Function.  
+**Warning** The literal string **{}** is an Object,not a Statement block.  
 **Info** The literal string **1+1** is an Expression.You can use **exp_calc** to calculate it.
 
 ##### Variable::var_tp
@@ -146,21 +146,24 @@ format: sample -> public id(private id) : can convert to : ...
 **null** -> null(Null) : can convert to : nothing.  
 **1 0xf 1.2** -> int(Int) : can convert to : Boolean.  
 **true false** -> bool(Boolean) : can convert to : Int.  
-**"hello world" "\u0032"** -> string(String) : can convert to : Array.  
+**"hello world" "\u0032"** -> string(String) : can convert to : Int(parseInt),Array.  
 **\[1,2,3\] \[3,4,5\]** -> array(Array) : can convert to : Object.  
-**{"object":1}** -> object(Object) : can convert to : nothing.  
+**{"object":1}** -> object(Object) : can convert to : Array.  
 **function(a,b=1){return "hi";}** -> function(Function) : can convert to : nothing.  
 **{return 1;}** -> Unknown(StmtBlock) : can convert to : nothing.  
 **1+1** -> Unknown(Expression) : can convert to : nothing.
 **tips:**You can use **const** command to make sure a literal has const attribute.
 
 ### Type declaration keyword
-You can use **\[type\] \[value\]** to convert a value to another value.
+
+You can use **\[type\] \[value\]** to convert a value to another type.
 sample\[1\]:
+
 ```
 string "1";#string
 string 1;#string
 ```
+
 ### Commands
 
 These commands are the basic L++ interpreter supports.  
@@ -289,7 +292,7 @@ var s=(new);#false
 var q=(new t);#{"a":true}
 ```
 
-**fn \[arguments\]** : Calls function \[fn\] and set variable 'arguments'\(and function argument list\) to \[arguments\].(_arguments_ must be an **array** and **cannot** be a variable.)  
+**\[fn\] \[arguments\]** : Calls function \[fn\] and set variable 'arguments'\(and function argument list\) to \[arguments\].(_arguments_ must be an **array** and **cannot** be a variable.)  
 sample\[1\]:
 
 ```
@@ -382,12 +385,22 @@ a.t;#true
 
 ### Extend Commands(use ENABLE_EXT to enable)
 
-**load \[path\]** Binds path as a function.You can call function to call it(with arguments).path **must** be String.  
+**ext \[name\],\[arguments\]** Calls the extend function **name** with **arguments**.name **must** be String.If zero arguments given,then returns true if the extend functions enabled.  
 sample\[1\]:
 
 ```
-var a=(load "/bin/echo");
-a ["Hello World!"];# Hello World!
+# __ext__ functions:
+# system [name:string,arguments:array] -> execute a program.
+# getline [] -> get a line from stdin.
+# print [any,...] -> print a(n) string/object to screen.
+ext "print",["Hello World!"];# Hello World!
+```
+
+**void \[expr\]** Calculates the **expr** and returns **null**.  
+sample\[1\]:
+```
+1+1;#2
+void 1+1;#null
 ```
 
 ### Native Members
@@ -402,8 +415,9 @@ using **object.\[the name of the member\]** or **object\[\["the name of the memb
 **insert\(index:Int,elem:Any\) Null -> can use on Array** : insert a element before the index.  
 **join\(str:String\) Null -> can use on Array** : put all the elements in the array into a string,split with str.  
 **toString\(\) : String -> can use on Any** : get the variable's string.  
-**substr\(start,\(cnt=-1\)\) String -> can use on String** : intercept the string from start,count cnt.
-
+**substr\(pos,\(cnt=-1\)\) String -> can use on String** : intercept the string from pos,count cnt.
+**trim\(\) String -> can use on String** : remove the blank characters from begin and end.
+**split\(str\) Array -> can use on String** : split string by str.
 ### Overload
 
 You can use this\["..."\] to override a native function.  

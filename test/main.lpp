@@ -2,9 +2,23 @@
 var std=(import "iostream");
 #main function start
 const main=function(argc,argv){
-  std.cout<<"Hello World!"<<"This is the official example!";
-  std.cout<<"ようこそ、世界へ！"<<"これは公式の見本です。";
-  std.cout<<"你好，世界！"<<"这是官方制作的样例。";
+  std.cout<<"Hello World!"<<std.endl;
+  std.cout<<"Your name:";
+  var x=std.cin.getline [];
+  std.cout<<"Welcome,"<<x<<"!"<<std.endl;
+  std.cout<<"Now please input two numbers,using space to split"<<std.endl;
+  var s=(std.cin.getline []).split [" "];
+  if (s.length!=2),{
+    std.cout<<"please input TWO numbers!"<<std.endl;
+    return 1;
+  };
+  var a,b;
+  try {a=(int s[0]);b=(int s[1]);},catch={
+    std.cout<<"number is invalid!"<<std.endl;
+    return 1;
+  };
+  std.cout<<"final:"<<(a+b)<<std.endl;
   return 0;#return value
 }
-return (main [arguments.length,arguments]);
+main [arguments.length,arguments];
+#return (main [arguments.length,arguments]);
