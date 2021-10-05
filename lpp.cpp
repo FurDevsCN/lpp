@@ -11,7 +11,7 @@ ENABLE_EXT : enable extend commands.
 #include <iostream>
 
 #include "./include/parse.h"
-#define VERSION_INFO L"1.6.2-20211004_beta"
+#define VERSION_INFO L"1.6.2-20211005_beta"
 // typedef class str_factory {
 //   std::wstring fmt;
 
@@ -80,6 +80,11 @@ const std::map<std::wstring, Lpp::Lpp::CmdType> getFunc() {
           [](const Lpp::Lpp& cmd, Variable::var& scope,
              Variable::var& all_scope,
              Variable::var& this_scope) -> const Lpp::Return_Value {
+    if (cmd.args.size() == 0) {
+      Variable::var temp;
+      temp.tp = Variable::getStrType(cmd.name);
+      return Lpp::Return_Value(Lpp::Calc_Value, temp);
+    }
     if (cmd.args.size() != 1)
       return Lpp::Return_Value(Lpp::Throw_Value, L"SyntaxError");
     try {

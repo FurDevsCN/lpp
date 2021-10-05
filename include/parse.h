@@ -277,12 +277,18 @@ typedef struct Lpp : public Lpp_base {
       else
         return false;
     }
-    return true;
+    try {
+      return Variable::parse(x).tp == Variable::Expression;
+    } catch (...) {
+      return false;
+    }
   }
   const bool isStatement(const std::wstring &x) const {
     Lpp_base &&a = Lpp_base(Variable::clearnull(x));
     try {
-      return isKeyword(a.name) || (a.args.size() == 1 && Variable::parse(a.args[0]).tp == Variable::Array);
+      return isKeyword(a.name) ||
+             (a.args.size() == 1 &&
+              Variable::parse(a.args[0]).tp == Variable::Array);
     } catch (...) {
       return false;
     }
@@ -828,7 +834,7 @@ typedef struct Lpp : public Lpp_base {
     }
     return temp;
   }
-  static const std::vector<std::wstring> get_name_split(const std::wstring &p){
+  static const std::vector<std::wstring> get_name_split(const std::wstring &p) {
     std::vector<std::wstring> visit;
     std::wstring temp;
     for (size_t i = 0, a = 0, j = 0, z = 0; i < p.length(); i++) {
@@ -862,8 +868,9 @@ typedef struct Lpp : public Lpp_base {
     return visit;
   }
   static const bool is_native(const std::wstring &x) {
-    const std::vector<std::wstring> a = {
-        L"substr", L"join", L"pop", L"push", L"resize", L"toString", L"split", L"trim"};
+    const std::vector<std::wstring> a = {L"substr", L"join",   L"pop",
+                                         L"push",   L"resize", L"toString",
+                                         L"split",  L"trim"};
     for (size_t i = 0; i < a.size(); i++) {
       if (a[i] == x) return true;
     }
@@ -898,6 +905,17 @@ typedef struct Lpp : public Lpp_base {
         find_str = visit_temp.toString();
       if (find_str[0] == L'_' && !this_keep) throw member_cant_visit;
       if (find_str == L"this") {
+        switch (fin) {
+          case is_pointer: {
+            if (now_object->tp != Variable::Object) throw member_cant_visit;
+            break;
+          }
+          case is_const_value: {
+            if (now_const_object.tp != Variable::Object)
+              throw member_cant_visit;
+            break;
+          }
+        }
         fin = is_pointer;
         lastisthis = true;
         now_object = this_object;
@@ -1007,7 +1025,8 @@ typedef struct Lpp : public Lpp_base {
         }
         if (is_overloaded) continue;
         isnative = true;
-        if (find_str == L"substr" || find_str == L"split" || find_str == L"trim") {
+        if (find_str == L"substr" || find_str == L"split" ||
+            find_str == L"trim") {
           switch (fin) {
             case is_pointer: {
               if (now_object->tp != Variable::String) throw member_not_exist;
@@ -1089,12 +1108,13 @@ typedef struct Lpp : public Lpp_base {
             switch (now_object->tp) {
               case Variable::String: {
                 try {
-                  visit_temp=visit_temp.convert(Variable::Int);
+                  visit_temp = visit_temp.convert(Variable::Int);
+                  if (visit_temp.IntValue < 0) throw nullptr;
                 } catch (...) {
                   throw member_not_exist;
                 }
                 now_const_object = std::wstring(
-                      1, now_object->StringValue[(size_t)visit_temp.IntValue]);
+                    1, now_object->StringValue[(size_t)visit_temp.IntValue]);
                 fin = is_const_value;
                 break;
               }
@@ -1118,6 +1138,11 @@ typedef struct Lpp : public Lpp_base {
               case Variable::Array: {
                 try {
                   visit_temp = visit_temp.convert(Variable::Int);
+                  if (visit_temp.IntValue < 0) throw nullptr;
+                } catch (...) {
+                  throw member_cant_visit;
+                }
+                try {
                   if ((size_t)visit_temp.IntValue >=
                       now_object->ArrayValue.size()) {
                     if (!nonewobject) {
@@ -1147,6 +1172,11 @@ typedef struct Lpp : public Lpp_base {
               case Variable::String: {
                 try {
                   visit_temp = visit_temp.convert(Variable::Int);
+                  if (visit_temp.IntValue < 0) throw member_cant_visit;
+                } catch (...) {
+                  throw member_cant_visit;
+                }
+                try {
                   if (now_const_object.StringValue.size() >=
                       (size_t)visit_temp.IntValue)
                     throw nullptr;
@@ -1161,14 +1191,21 @@ typedef struct Lpp : public Lpp_base {
               case Variable::Object: {
                 if (now_const_object.ObjectValue.find(find_str) ==
                     now_const_object.ObjectValue.cend())
-                  throw member_not_exist;
-                parent_const_object = now_const_object;
-                now_const_object = now_const_object.ObjectValue[find_str];
+                  now_const_object = nullptr;
+                else {
+                  parent_const_object = now_const_object;
+                  now_const_object = now_const_object.ObjectValue[find_str];
+                }
                 break;
               }
               case Variable::Array: {
                 try {
                   visit_temp = visit_temp.convert(Variable::Int);
+                  if (visit_temp.IntValue < 0) throw nullptr;
+                } catch (...) {
+                  throw member_cant_visit;
+                }
+                try {
                   if ((size_t)visit_temp.IntValue >=
                       now_const_object.ArrayValue.size())
                     throw nullptr;
