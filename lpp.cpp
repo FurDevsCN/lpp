@@ -11,7 +11,7 @@ ENABLE_EXT : enable extend commands.
 #include <iostream>
 
 #include "./include/parse.h"
-#define VERSION_INFO L"1.6.2-20211005_beta"
+#define VERSION_INFO L"1.6.2-20211011_beta"
 // typedef class str_factory {
 //   std::wstring fmt;
 

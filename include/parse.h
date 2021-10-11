@@ -5,6 +5,9 @@ copyright(c) 2021 nu11ptr team.
 #ifndef PARSE_MODULE
 #define PARSE_MODULE
 #include <functional>
+#include <map>
+#include <string>
+#include <vector>
 
 #include "./var.h"
 namespace Lpp {

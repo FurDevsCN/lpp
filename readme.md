@@ -157,11 +157,13 @@ format: sample -> public id(private id) : can convert to : ...
 ### Type declaration keyword
 
 You can use **\[type\] \[value\]** to convert a value to another type.
+If zero arguments given,it will construct a void object.
 sample\[1\]:
 
 ```
 string "1";#string
 string 1;#string
+string;#""
 ```
 
 ### Commands

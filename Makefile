@@ -13,4 +13,6 @@ debug :
 	@$(CXX) -g -Wall -D ENABLE_EXT $(LDFLAGS) lpp.cpp -o $(OUTPUT)
 	@echo "-- DONE --"
 clean :
-	rm $(OUTPUT)
+	@echo "[RM] $(OUTPUT)"
+	@rm $(OUTPUT)
+	@echo "-- DONE --"

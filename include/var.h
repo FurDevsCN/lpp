@@ -13,7 +13,7 @@ typedef class ConvFail {
   std::wstring _err;
 
  public:
-  const std::wstring what() const { return _err; }
+  const std::wstring &what() const { return _err; }
   ConvFail() {}
   ConvFail(const std::wstring &err) { _err = err; }
 } ConvFail;
@@ -21,7 +21,7 @@ typedef class ExprErr {
   std::wstring _err;
 
  public:
-  const std::wstring what() const { return _err; }
+  const std::wstring &what() const { return _err; }
   ExprErr() {}
   ExprErr(const std::wstring &err) { _err = err; }
 } ExprErr;
@@ -29,11 +29,11 @@ typedef class SyntaxErr {
   std::wstring _err;
 
  public:
-  const std::wstring what() const { return _err; }
+  const std::wstring &what() const { return _err; }
   SyntaxErr() {}
   SyntaxErr(const std::wstring &err) { _err = err; }
 } SyntaxErr;
-int get_op_priority(const std::wstring &op) {
+const int get_op_priority(const std::wstring &op) {
   if (op == L"+") return 1;
   if (op == L",") return 0;
   if (op == L"-") return 1;
@@ -321,8 +321,8 @@ const std::string WString2String(const std::wstring &s) {
     t.resize(q);
   return t;
 }
-const std::wstring trim(const std::wstring& p) {
-  std::wstring x=p;
+const std::wstring trim(const std::wstring &p) {
+  std::wstring x = p;
   x.erase(0, x.find_first_not_of(' '));
   x.erase(x.find_last_not_of(' ') + 1);
   x.erase(0, x.find_first_not_of('\r'));
@@ -337,8 +337,8 @@ const std::wstring trim(const std::wstring& p) {
   x.erase(x.find_last_not_of('\f') + 1);
   return x;
 }
-const std::wstring clearnull(const std::wstring& p) {
-  std::wstring x=trim(p),tmp;
+const std::wstring clearnull(const std::wstring &p) {
+  std::wstring x = trim(p), tmp;
   bool have_exp = true;
   for (size_t i = 0, a = 0, z = 0, j = 0; i < x.length(); i++) {
     if (x[i] == L'\\')
@@ -518,7 +518,7 @@ typedef class var {
         if (value != L"") return name + L"=" + value;
         return name;
       }
-      bool operator==(const Arg_Item &comp) const {
+      const bool operator==(const Arg_Item &comp) const {
         return name == comp.name && value == comp.value;
       }
     } Arg_Item;
@@ -841,7 +841,7 @@ typedef class var {
         return false;
       }
     }
-    const var op = value.convert(tp);
+    const var &op = value.convert(tp);
     if (str_op == L"+") {
       var ret;
       switch (tp) {
@@ -886,6 +886,19 @@ typedef class var {
       switch (tp) {
         case Int: {
           return IntValue * op.IntValue;
+        }
+        case String: {
+          try {
+            value.convert(Int);
+          } catch (...) {
+            throw nullptr;
+          }
+          const var &temp = value.convert(Int);
+          std::wstring w;
+          for (size_t i = 0; i < temp.IntValue; i++) {
+            w += StringValue;
+          }
+          return w;
         }
         default: {
           throw nullptr;
@@ -965,8 +978,7 @@ typedef class var {
     } else if (str_op == L">>>") {
       switch (tp) {
         case Int: {
-          return var(
-              double((unsigned int)IntValue >> (unsigned int)op.IntValue));
+          return var((double)((size_t)IntValue >> (size_t)op.IntValue));
         }
         default: {
           throw nullptr;
@@ -999,8 +1011,10 @@ typedef class var {
           return FunctionValue.args == op.FunctionValue.args &&
                  FunctionValue.block.value == op.FunctionValue.block.value;
         }
+        default: {
+          return false;
+        }
       }
-      return false;
     } else if (str_op == L"!=") {
       return !opcall(L"==", value).BooleanValue;
     } else if (str_op == L">") {
