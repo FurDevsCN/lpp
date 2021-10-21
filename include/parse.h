@@ -142,10 +142,13 @@ typedef struct Lpp : public Lpp_base {
                                            Variable::var &, Variable::var &)>
       CmdType;
   std::map<std::wstring, CmdType> cmd;
+  bool inNew;
   Lpp() : Lpp_base() {}
-  Lpp(const std::wstring &x, const std::map<std::wstring, CmdType> &_cmd)
+  Lpp(const std::wstring &x, const std::map<std::wstring, CmdType> &_cmd,
+      const bool _inNew)
       : Lpp_base(x) {
     cmd = _cmd;
+    inNew = _inNew;
   }  //= Lpp_base(const std::wstring&);
   const Exec_Info eval(const Variable::var &scope) {
     Variable::var temp = scope;
@@ -321,7 +324,7 @@ typedef struct Lpp : public Lpp_base {
       throw member_not_exist;
     }
     if (isStatement(n)) {
-      Return_Value s = Lpp(n, cmd).eval(scope, all_scope, this_scope);
+      Return_Value s = Lpp(n, cmd, inNew).eval(scope, all_scope, this_scope);
       if (s.tp != Calc_Value)
         throw s;
       else
@@ -414,7 +417,7 @@ typedef struct Lpp : public Lpp_base {
     }
     for (size_t i = 0; i < stmt.StmtValue.value.size(); i++) {
       a = 0;
-      Lpp temp = Lpp(stmt.StmtValue.value[i], s);
+      Lpp temp = Lpp(stmt.StmtValue.value[i], s, inNew);
       Exec_Info res = temp.eval(temp_scope, all_scope, this_scope);
       if (res.tp != Calc_Value) {
         res.scope = scope;
@@ -450,65 +453,9 @@ typedef struct Lpp : public Lpp_base {
       throw Variable::ExprErr(L"failed to initalize argument list.");
     }
     std::map<std::wstring, CmdType> s = cmd;
-    if (innew) {
-      s[L"new"] = [](const Lpp &cmd, Variable::var &scope,
-                     Variable::var &all_scope,
-                     Variable::var &this_scope) -> const Return_Value {
-        Variable::var func;
-        Variable::var func_arg;
-        if (cmd.args.size() == 0) return Return_Value(Calc_Value, true);
-        try {
-          if (cmd.args.size() < 1 || cmd.args.size() > 2) throw nullptr;
-        } catch (...) {
-          return Return_Value(Throw_Value, L"SyntaxError");
-        }
-        try {
-          func = cmd.exp_calc(Variable::parse(cmd.args[0]), scope, all_scope,
-                              this_scope);
-          if (func.tp != Variable::Function) throw nullptr;
-        } catch (const std::nullptr_t &) {
-          return Return_Value(cmd.args[0], Throw_Value, L"SyntaxError");
-        } catch (...) {
-          return Return_Value(cmd.args[0], Throw_Value, L"ExpressionError");
-        }
-        Variable::var temp_scope;
-        Variable::var temp_this_scope;
-        temp_scope.isConst = false;
-        temp_scope.tp = Variable::Object;
-        temp_this_scope.isConst = false;
-        temp_this_scope.tp = Variable::Object;
-        if (cmd.args.size() == 2) {
-          try {
-            const Variable::var &temp = Variable::parse(cmd.args[1]);
-            if (temp.tp != Variable::Array)
-              return Return_Value(cmd.args[1], Throw_Value, L"SyntaxError");
-            func_arg = cmd.exp_calc(temp, scope, all_scope, this_scope);
-          } catch (...) {
-            return Return_Value(cmd.args[1], Throw_Value, L"ExpressionError");
-          }
-        } else
-          func_arg = std::vector<Variable::var>();
-        try {
-          cmd.RunFunc(func, temp_scope, all_scope, temp_this_scope, func_arg,
-                      true);
-          return Return_Value(Calc_Value, temp_this_scope);
-        } catch (Variable::SyntaxErr &) {
-          return Return_Value(Throw_Value, L"SyntaxError");
-        } catch (Variable::ExprErr &) {
-          if (cmd.args.size() == 1) {
-            return Return_Value(Throw_Value, L"ExpressionError");
-          }
-          return Return_Value(cmd.args[1], Throw_Value, L"ExpressionError");
-        } catch (const Exec_Info &a) {
-          return Return_Value(a.cmd.toString(), a.tp, a.value);
-        } catch (...) {
-          return Return_Value(Throw_Value, L"EvalError");
-        }
-      };
-    }
     for (size_t i = 0; i < func.FunctionValue.block.value.size(); i++) {
       Exec_Info res;
-      res = Lpp(func.FunctionValue.block.value[i], s)
+      res = Lpp(func.FunctionValue.block.value[i], s, innew)
                 .eval(temp_scope, all_scope, *parent);
       if (res.tp == Ret_Value) {
         return res.value;
@@ -760,7 +707,7 @@ typedef struct Lpp : public Lpp_base {
           i++;
         } else {
           const Exec_Info &temp =
-              Lpp(*i, cmd).eval(scope, all_scope, this_scope);
+              Lpp(*i, cmd, inNew).eval(scope, all_scope, this_scope);
           if (temp.tp == Throw_Value)
             throw temp;
           else

@@ -9,29 +9,22 @@ Copyright(c) 2021 nu11ptr team.
 #include <string>
 #include <vector>
 namespace Variable {
-typedef class ConvFail {
-  std::wstring _err;
-
- public:
+typedef struct BaseErr {
   const std::wstring &what() const { return _err; }
-  ConvFail() {}
-  ConvFail(const std::wstring &err) { _err = err; }
+  BaseErr() {}
+  BaseErr(const std::wstring &err) { _err = err; }
+
+ private:
+  std::wstring _err;
+} BaseErr;
+typedef struct ConvFail : public BaseErr {
+  ConvFail(const std::wstring &t) : BaseErr(t){};
 } ConvFail;
-typedef class ExprErr {
-  std::wstring _err;
-
- public:
-  const std::wstring &what() const { return _err; }
-  ExprErr() {}
-  ExprErr(const std::wstring &err) { _err = err; }
+typedef struct ExprErr : public BaseErr {
+  ExprErr(const std::wstring &t) : BaseErr(t){};
 } ExprErr;
-typedef class SyntaxErr {
-  std::wstring _err;
-
- public:
-  const std::wstring &what() const { return _err; }
-  SyntaxErr() {}
-  SyntaxErr(const std::wstring &err) { _err = err; }
+typedef struct SyntaxErr : public BaseErr {
+  SyntaxErr(const std::wstring &t) : BaseErr(t){};
 } SyntaxErr;
 const int get_op_priority(const std::wstring &op) {
   if (op == L"+") return 1;
@@ -243,11 +236,10 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
           if (temp != L"") ret.push_back(temp), temp = L"";
           f++;
           ret.push_back(L"(");
-        } else if (a == 0) {
+        } else {
+          if (a == 0) f++;
           temp += L'(';
-          f++;
-        } else
-          temp += L'(';
+        }
         break;
       }
       case L')': {
@@ -259,11 +251,10 @@ const std::vector<std::wstring> splitExpression(const std::wstring &p) {
           if (temp != L"") ret.push_back(temp), temp = L"";
           f--;
           ret.push_back(L")");
-        } else if (a == 0) {
-          f--;
+        } else {
+          if (a == 0) f--;
           temp += L')';
-        } else
-          temp += L')';
+        }
         break;
       }
       case L'{':
@@ -835,15 +826,82 @@ typedef class var {
   const var opcall(const std::wstring &str_op, const var &value) const {
     if (str_op == L"==" || str_op == L"!=" || str_op == L">=" ||
         str_op == L"<=" || str_op == L">" || str_op == L"<") {
+      Variable::var op;
       try {
-        value.convert(tp);
+        op = value.convert(tp);
       } catch (...) {
         return false;
       }
+      if (str_op == L"==") {
+        switch ((size_t)op.tp) {
+          case Int: {
+            return op.IntValue == IntValue;
+          }
+          case Null: {
+            return true;
+          }
+          case Boolean: {
+            return op.BooleanValue == BooleanValue;
+          }
+          case String: {
+            return op.StringValue == StringValue;
+          }
+          case Array: {
+            return ArrayValue == op.ArrayValue;
+          }
+          case Object: {
+            return ObjectValue == op.ObjectValue;
+          }
+          case StmtBlock: {
+            return StmtValue.value == op.StmtValue.value;
+          }
+          case Function: {
+            return FunctionValue.args == op.FunctionValue.args &&
+                   FunctionValue.block.value == op.FunctionValue.block.value;
+          }
+          default: {
+            return false;
+          }
+        }
+      } else if (str_op == L"!=") {
+        return !opcall(L"==", value).BooleanValue;
+      } else if (str_op == L">") {
+        switch (op.tp) {
+          case Int: {
+            return IntValue > op.IntValue;
+          }
+          case String: {
+            return StringValue > op.StringValue;
+          }
+          default: {
+            return false;
+          }
+        }
+        return false;
+      } else if (str_op == L"<") {
+        switch (op.tp) {
+          case Int: {
+            return IntValue < op.IntValue;
+          }
+          case String: {
+            return StringValue < op.StringValue;
+          }
+          default: {
+            return false;
+          }
+        }
+        return false;
+      } else if (str_op == L">=") {
+        return (opcall(L">", value).BooleanValue) ||
+               (opcall(L"==", op).BooleanValue);
+      } else if (str_op == L"<=") {
+        return (opcall(L"<", value).BooleanValue) ||
+               (opcall(L"==", op).BooleanValue);
+      }
     }
-    const var &op = value.convert(tp);
     if (str_op == L"+") {
       var ret;
+      const Variable::var &op = value.convert(tp);
       switch (tp) {
         case Int: {
           return IntValue + op.IntValue;
@@ -874,6 +932,7 @@ typedef class var {
         }
       }
     } else if (str_op == L"-") {
+      const Variable::var &op = value.convert(tp);
       switch (tp) {
         case Int: {
           return IntValue - op.IntValue;
@@ -885,18 +944,24 @@ typedef class var {
     } else if (str_op == L"*") {
       switch (tp) {
         case Int: {
+          const Variable::var &op = value.convert(tp);
           return IntValue * op.IntValue;
         }
         case String: {
-          try {
-            value.convert(Int);
-          } catch (...) {
-            throw nullptr;
-          }
           const var &temp = value.convert(Int);
           std::wstring w;
           for (size_t i = 0; i < temp.IntValue; i++) {
             w += StringValue;
+          }
+          return w;
+        }
+        case Array: {
+          const var &temp = value.convert(Int);
+          std::vector<var> w;
+          for (size_t i = 0; i < temp.IntValue; i++) {
+            for (size_t q = 0; q < ArrayValue.size(); q++) {
+              w.push_back(ArrayValue[q]);
+            }
           }
           return w;
         }
@@ -905,6 +970,7 @@ typedef class var {
         }
       }
     } else if (str_op == L"/") {
+      const Variable::var &op = value.convert(tp);
       switch (tp) {
         case Int: {
           if (op.IntValue == 0) throw ExprErr(L"div by zero");  // div by zero
@@ -915,6 +981,7 @@ typedef class var {
         }
       }
     } else if (str_op == L"%") {
+      const Variable::var &op = value.convert(tp);
       switch (tp) {
         case Int: {
           if (op.IntValue == 0) throw ExprErr(L"div by zero");  // div by zero
@@ -925,6 +992,7 @@ typedef class var {
         }
       }
     } else if (str_op == L"&") {
+      const Variable::var &op = value.convert(tp);
       switch (tp) {
         case Int: {
           return (int)IntValue & (int)op.IntValue;
@@ -934,6 +1002,7 @@ typedef class var {
         }
       }
     } else if (str_op == L"|") {
+      const Variable::var &op = value.convert(tp);
       switch (tp) {
         case Int: {
           return (int)IntValue | (int)op.IntValue;
@@ -943,6 +1012,7 @@ typedef class var {
         }
       }
     } else if (str_op == L"^") {
+      const Variable::var &op = value.convert(tp);
       switch (tp) {
         case Int: {
           return (int)IntValue ^ (int)op.IntValue;
@@ -952,6 +1022,7 @@ typedef class var {
         }
       }
     } else if (str_op == L"<<") {
+      const Variable::var &op = value.convert(tp);
       switch (tp) {
         case Int: {
           if (op.IntValue >= 32)
@@ -964,6 +1035,7 @@ typedef class var {
         }
       }
     } else if (str_op == L">>") {
+      const Variable::var &op = value.convert(tp);
       switch (tp) {
         case Int: {
           if (op.IntValue >= 32)
@@ -976,6 +1048,7 @@ typedef class var {
         }
       }
     } else if (str_op == L">>>") {
+      const Variable::var &op = value.convert(tp);
       switch (tp) {
         case Int: {
           return var((double)((size_t)IntValue >> (size_t)op.IntValue));
@@ -984,71 +1057,6 @@ typedef class var {
           throw nullptr;
         }
       }
-    } else if (str_op == L"==") {
-      switch ((size_t)op.tp) {
-        case Int: {
-          return op.IntValue == IntValue;
-        }
-        case Null: {
-          return true;
-        }
-        case Boolean: {
-          return op.BooleanValue == BooleanValue;
-        }
-        case String: {
-          return op.StringValue == StringValue;
-        }
-        case Array: {
-          return ArrayValue == op.ArrayValue;
-        }
-        case Object: {
-          return ObjectValue == op.ObjectValue;
-        }
-        case StmtBlock: {
-          return StmtValue.value == op.StmtValue.value;
-        }
-        case Function: {
-          return FunctionValue.args == op.FunctionValue.args &&
-                 FunctionValue.block.value == op.FunctionValue.block.value;
-        }
-        default: {
-          return false;
-        }
-      }
-    } else if (str_op == L"!=") {
-      return !opcall(L"==", value).BooleanValue;
-    } else if (str_op == L">") {
-      switch (op.tp) {
-        case Int: {
-          return IntValue > op.IntValue;
-        }
-        case String: {
-          return StringValue > op.StringValue;
-        }
-        default: {
-          return false;
-        }
-      }
-      return false;
-    } else if (str_op == L"<") {
-      switch (op.tp) {
-        case Int: {
-          return IntValue < op.IntValue;
-        }
-        case String: {
-          return StringValue < op.StringValue;
-        }
-        default: {
-          return false;
-        }
-      }
-      return false;
-    } else if (str_op == L">=") {
-      return (opcall(L">", value).BooleanValue) ||
-             (opcall(L"==", op).BooleanValue);
-    } else if (str_op == L"<=") {
-      return (opcall(L"<", value).BooleanValue) ||
-             (opcall(L"==", op).BooleanValue);
     } else if (str_op == L"&&") {
       return (var(true).opcall(L"==", *this).BooleanValue) &&
              (var(true).opcall(L"==", value).BooleanValue);

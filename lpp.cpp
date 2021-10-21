@@ -11,7 +11,7 @@ ENABLE_EXT : enable extend commands.
 #include <iostream>
 
 #include "./include/parse.h"
-#define VERSION_INFO L"1.6.2-20211011_beta"
+#define VERSION_INFO L"1.6.2-20211021_beta"
 // typedef class str_factory {
 //   std::wstring fmt;
 
@@ -406,7 +406,7 @@ const std::map<std::wstring, Lpp::Lpp::CmdType> getFunc() {
       return Lpp::Return_Value(Lpp::Throw_Value, L"ExpressionError");
     }
     temp_scope = scope;
-    res = Lpp::Lpp(start, cmd.cmd).eval(temp_scope);
+    res = Lpp::Lpp(start, cmd.cmd,cmd.inNew).eval(temp_scope);
     if (res.tp != Lpp::Calc_Value) {
       return Lpp::Return_Value(res);
     }
@@ -433,7 +433,7 @@ const std::map<std::wstring, Lpp::Lpp::CmdType> getFunc() {
         }
       } else
         break;
-      res = Lpp::Lpp(routine, cmd.cmd).eval(temp_scope);
+      res = Lpp::Lpp(routine, cmd.cmd,cmd.inNew).eval(temp_scope);
       if (res.tp != Lpp::Calc_Value) {
         return Lpp::Return_Value(res.cmd.toString(), res.tp, res.value);
       }
@@ -445,7 +445,7 @@ const std::map<std::wstring, Lpp::Lpp::CmdType> getFunc() {
                     Variable::var& this_scope) -> const Lpp::Return_Value {
     Variable::var func;
     Variable::var func_arg;
-    if (cmd.args.size() == 0) return Lpp::Return_Value(Lpp::Calc_Value, false);
+    if (cmd.args.size() == 0) return Lpp::Return_Value(Lpp::Calc_Value, cmd.inNew);
     if (cmd.args.size() < 1 || cmd.args.size() > 2)
       return Lpp::Return_Value(Lpp::Throw_Value, L"SyntaxError");
     try {
@@ -526,7 +526,7 @@ const std::map<std::wstring, Lpp::Lpp::CmdType> getFunc() {
               return Lpp::Return_Value(Lpp::Throw_Value, L"SyntaxError");
             return Lpp::Return_Value(Lpp::Calc_Value, i.value);
           };
-          Lpp::Lpp(L"", s).RunStmt(fn, scope, all_scope, this_scope, temp_scope,
+          Lpp::Lpp(L"", s,cmd.inNew).RunStmt(fn, scope, all_scope, this_scope, temp_scope,
                                    nullptr, false, false);
         } catch (const Lpp::Exec_Info& i) {
           return Lpp::Return_Value(i.cmd.toString(), i.tp, i.value);
@@ -567,7 +567,7 @@ const std::map<std::wstring, Lpp::Lpp::CmdType> getFunc() {
     }
     if (op.tp == Variable::String)
       return Lpp::Return_Value(
-          Lpp::Lpp(op.StringValue, cmd.cmd).eval(scope, all_scope, this_scope));
+          Lpp::Lpp(op.StringValue, cmd.cmd,cmd.inNew).eval(scope, all_scope, this_scope));
     else
       return Lpp::Return_Value(Lpp::Calc_Value, op);
   };
@@ -840,59 +840,10 @@ const std::map<std::wstring, Lpp::Lpp::CmdType> getFunc() {
                  Variable::var& this_scope) -> const Lpp::Return_Value {
             return Lpp::Return_Value(Lpp::Throw_Value, L"SyntaxError");
           };
-          s[L"new"] = [](const Lpp::Lpp& cmd, Variable::var& scope,
-                         Variable::var& all_scope,
-                         Variable::var& this_scope) -> const Lpp::Return_Value {
-            Variable::var func;
-            Variable::var func_arg;
-            if (cmd.args.size() == 0)
-              return Lpp::Return_Value(Lpp::Calc_Value, false);
-            try {
-              if (cmd.args.size() < 1 || cmd.args.size() > 2) throw nullptr;
-              func = cmd.exp_calc(Variable::parse(cmd.args[0]), scope,
-                                  all_scope, this_scope);
-              if (func.tp != Variable::Function) throw nullptr;
-            } catch (...) {
-              return Lpp::Return_Value(cmd.args[0], Lpp::Throw_Value,
-                                       L"SyntaxError");
-            }
-            Variable::var temp_scope;
-            Variable::var temp_this_scope;
-            temp_scope.isConst = true;
-            temp_scope.tp = Variable::Object;
-            temp_this_scope.isConst = true;
-            temp_this_scope.tp = Variable::Object;
-            if (cmd.args.size() >= 2) {
-              try {
-                const Variable::var& temp = Variable::parse(cmd.args[1]);
-                if (temp.tp != Variable::Array)
-                  return Lpp::Return_Value(cmd.args[1], Lpp::Throw_Value,
-                                           L"SyntaxError");
-                func_arg = cmd.exp_calc(temp, scope, all_scope, this_scope);
-              } catch (...) {
-                return Lpp::Return_Value(cmd.args[1], Lpp::Throw_Value,
-                                         L"ExpressionError");
-              }
-            } else
-              func_arg = std::vector<Variable::var>();
-            try {
-              cmd.RunFunc(func, temp_scope, all_scope, temp_this_scope,
-                          func_arg, true);
-              return Lpp::Return_Value(Lpp::Calc_Value, temp_this_scope);
-            } catch (Variable::SyntaxErr&) {
-              return Lpp::Return_Value(Lpp::Throw_Value, L"SyntaxError");
-            } catch (Variable::ExprErr&) {
-              return Lpp::Return_Value(Lpp::Throw_Value, L"ExpressionError");
-            } catch (const Lpp::Exec_Info& a) {
-              return Lpp::Return_Value(a.cmd.toString(), a.tp, a.value);
-            } catch (...) {
-              return Lpp::Return_Value(Lpp::Throw_Value, L"EvalError");
-            }
-          };
           try {
             return Lpp::Return_Value(
                 Lpp::Calc_Value,
-                Lpp::Lpp(L"", s).RunFunc(realfunc, temp_scope, all_scope,
+                Lpp::Lpp(L"", s,cmd.inNew).RunFunc(realfunc, temp_scope, all_scope,
                                          *parent, args_temp, false));
           } catch (Variable::SyntaxErr&) {
             return Lpp::Return_Value(Lpp::Throw_Value, L"SyntaxError");
@@ -994,7 +945,7 @@ const std::map<std::wstring, Lpp::Lpp::CmdType> getFunc() {
         std::vector<std::wstring> w = Variable::code_split(fin);
         Lpp::Exec_Info x;
         for (size_t i = 0; i < w.size(); i++) {
-          x = Lpp::Lpp(w[i], cmd_temp).eval(temp_scope);
+          x = Lpp::Lpp(w[i], cmd_temp,false).eval(temp_scope);
           temp_scope = x.scope;
           if (x.tp == Lpp::Throw_Value) {
             return Lpp::Return_Value(x.cmd.toString(), x.tp, x.value);
@@ -1173,7 +1124,7 @@ int main(int argc, char** argv) {
       std::vector<std::wstring> w = Variable::code_split(fin);
       Lpp::Exec_Info x;
       for (size_t i = 0; i < w.size(); i++) {
-        x = Lpp::Lpp(w[i], behav).eval(f);
+        x = Lpp::Lpp(w[i], behav,false).eval(f);
         f = x.scope;
         if (x.tp == Lpp::Throw_Value) {
           if (x.msg == L"")
@@ -1274,7 +1225,7 @@ int main(int argc, char** argv) {
       Lpp::Exec_Info x;
       bool inerr = false;
       for (size_t i = 0; i < w.size(); i++) {
-        x = Lpp::Lpp(w[i], behav).eval(f);
+        x = Lpp::Lpp(w[i], behav,false).eval(f);
         f = x.scope;
         if (x.tp == Lpp::Throw_Value) {
           if (x.msg == L"")
@@ -1348,7 +1299,7 @@ int main(int argc, char** argv) {
       std::vector<std::wstring> w = Variable::code_split(fin);
       Lpp::Exec_Info x;
       for (size_t i = 0; i < w.size(); i++) {
-        x = Lpp::Lpp(w[i], behav).eval(f);
+        x = Lpp::Lpp(w[i], behav,false).eval(f);
         f = x.scope;
         if (x.tp == Lpp::Throw_Value) {
           if (x.msg == L"")
