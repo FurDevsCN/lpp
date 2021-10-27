@@ -11,7 +11,7 @@ ENABLE_EXT : enable extend commands.
 #include <iostream>
 
 #include "./include/parse.h"
-#define VERSION_INFO L"1.6.2-20211021_beta"
+#define VERSION_INFO L"1.6.2-20211027_beta"
 // typedef class str_factory {
 //   std::wstring fmt;
 
@@ -406,9 +406,10 @@ const std::map<std::wstring, Lpp::Lpp::CmdType> getFunc() {
       return Lpp::Return_Value(Lpp::Throw_Value, L"ExpressionError");
     }
     temp_scope = scope;
-    res = Lpp::Lpp(start, cmd.cmd,cmd.inNew).eval(temp_scope);
+    res = Lpp::Lpp(start, cmd.cmd,cmd.inNew).eval(temp_scope,all_scope,this_scope);
+    //temp_scope = res.scope;
     if (res.tp != Lpp::Calc_Value) {
-      return Lpp::Return_Value(res);
+      return Lpp::Return_Value(start,res.tp,res.value);
     }
     exclude = cmd.exclude_scope(scope, temp_scope);
     while (true) {
@@ -433,9 +434,9 @@ const std::map<std::wstring, Lpp::Lpp::CmdType> getFunc() {
         }
       } else
         break;
-      res = Lpp::Lpp(routine, cmd.cmd,cmd.inNew).eval(temp_scope);
+      res = Lpp::Lpp(routine, cmd.cmd,cmd.inNew).eval(temp_scope,all_scope,this_scope);
       if (res.tp != Lpp::Calc_Value) {
-        return Lpp::Return_Value(res.cmd.toString(), res.tp, res.value);
+        return Lpp::Return_Value(routine, res.tp, res.value);
       }
     }
     return Lpp::Return_Value(Lpp::Calc_Value, nullptr);
@@ -1147,7 +1148,7 @@ int main(int argc, char** argv) {
     }
   } else if (arg[0] == L"-i" || arg[0] == L"--interactive") {
     std::wcout << L"lpp interpreter (" << VERSION_INFO << L")" << std::endl;
-    std::wcout << L"type \"copyright\" or \"help\" for more informations."
+    std::wcout << L"type \"copyright\" or \"help\" for more information."
                << std::endl;
     behav[L"help"] = [](const Lpp::Lpp& cmd, Variable::var& scope,
                         Variable::var& all_scope,
