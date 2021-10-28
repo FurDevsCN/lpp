@@ -142,13 +142,10 @@ typedef struct Lpp : public Lpp_base {
                                            Variable::var &, Variable::var &)>
       CmdType;
   std::map<std::wstring, CmdType> cmd;
-  bool inNew;
   Lpp() : Lpp_base() {}
-  Lpp(const std::wstring &x, const std::map<std::wstring, CmdType> &_cmd,
-      const bool _inNew)
+  Lpp(const std::wstring &x, const std::map<std::wstring, CmdType> &_cmd)
       : Lpp_base(x) {
     cmd = _cmd;
-    inNew = _inNew;
   }  //= Lpp_base(const std::wstring&);
   const Exec_Info eval(const Variable::var &scope) {
     Variable::var temp = scope;
@@ -324,7 +321,7 @@ typedef struct Lpp : public Lpp_base {
       throw member_not_exist;
     }
     if (isStatement(n)) {
-      Return_Value s = Lpp(n, cmd, inNew).eval(scope, all_scope, this_scope);
+      Return_Value s = Lpp(n, cmd).eval(scope, all_scope, this_scope);
       if (s.tp != Calc_Value)
         throw s;
       else
@@ -417,7 +414,7 @@ typedef struct Lpp : public Lpp_base {
     }
     for (size_t i = 0; i < stmt.StmtValue.value.size(); i++) {
       a = 0;
-      Lpp temp = Lpp(stmt.StmtValue.value[i], s, inNew);
+      Lpp temp = Lpp(stmt.StmtValue.value[i], s);
       Exec_Info res = temp.eval(temp_scope, all_scope, this_scope);
       if (res.tp != Calc_Value) {
         res.scope = scope;
@@ -455,7 +452,7 @@ typedef struct Lpp : public Lpp_base {
     std::map<std::wstring, CmdType> s = cmd;
     for (size_t i = 0; i < func.FunctionValue.block.value.size(); i++) {
       Exec_Info res;
-      res = Lpp(func.FunctionValue.block.value[i], s, innew)
+      res = Lpp(func.FunctionValue.block.value[i], s)
                 .eval(temp_scope, all_scope, *parent);
       if (res.tp == Ret_Value) {
         return res.value;
@@ -707,7 +704,7 @@ typedef struct Lpp : public Lpp_base {
           i++;
         } else {
           const Exec_Info &temp =
-              Lpp(*i, cmd, inNew).eval(scope, all_scope, this_scope);
+              Lpp(*i, cmd).eval(scope, all_scope, this_scope);
           if (temp.tp == Throw_Value)
             throw temp;
           else
