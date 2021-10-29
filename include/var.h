@@ -572,9 +572,7 @@ typedef class var {
   var(const std::map<std::wstring, var> &x, const bool c = true) {
     ObjectValue = x, tp = Object;
     if (x.find(L"__constructor__") == x.cend()) {
-      ObjectValue[L"__constructor__"].tp = Function;
-      ObjectValue[L"__constructor__"].FunctionValue.block.value.push_back(
-          L"return {}");
+      ObjectValue[L"__constructor__"].tp = Object;
     }
     isConst = c;
     needtoRemove = false;

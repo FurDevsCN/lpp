@@ -283,7 +283,6 @@ var a=(new fn,[1]);
 #a = {"a":1}
 ```
 
-New feature after **1.4.1-20210921_beta**:If you type a **new**,you can get the new status of this function.  
 sample\[2\]:
 
 ```
@@ -292,6 +291,15 @@ var t=function(){
 }
 var s=(new);#false
 var q=(new t);#{"a":true}
+```
+
+**instance \[obj\]** : Gets instance of obj. It will return a function\(new\),or something else.  
+sample\[1\]:
+
+```
+instance {};#{}
+var A=function(){this["a"]=1;}
+instance (new A);#function...
 ```
 
 **\[fn\] \[arguments\]** : Calls function \[fn\] and set variable 'arguments'\(and function argument list\) to \[arguments\].(_arguments_ must be an **array** and **cannot** be a variable.)  
@@ -400,6 +408,7 @@ ext "print",["Hello World!"];# Hello World!
 
 **void \[expr\]** Calculates the **expr** and returns **null**.  
 sample\[1\]:
+
 ```
 1+1;#2
 void 1+1;#null
@@ -420,6 +429,7 @@ using **object.\[the name of the member\]** or **object\[\["the name of the memb
 **substr\(pos,\(cnt=-1\)\) String -> can use on String** : intercept the string from pos,count cnt.
 **trim\(\) String -> can use on String** : remove the blank characters from begin and end.
 **split\(str\) Array -> can use on String** : split string by str.
+
 ### Overload
 
 You can use this\["..."\] to override a native function.  
