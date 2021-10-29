@@ -571,6 +571,11 @@ typedef class var {
   }
   var(const std::map<std::wstring, var> &x, const bool c = true) {
     ObjectValue = x, tp = Object;
+    if (x.find(L"__constructor__") == x.cend()) {
+      ObjectValue[L"__constructor__"].tp = Function;
+      ObjectValue[L"__constructor__"].FunctionValue.block.value.push_back(
+          L"return {}");
+    }
     isConst = c;
     needtoRemove = false;
   }
@@ -692,6 +697,7 @@ typedef class var {
         for (std::map<std::wstring, var>::const_iterator it =
                  ObjectValue.cbegin();
              it != ObjectValue.cend(); it++) {
+          if (it->first == L"__constructor__") continue;
           tmp += var(it->first).toString() + L":";
           tmp += it->second.toString();
           if ((++std::map<std::wstring, var>::const_iterator(it)) !=
@@ -1252,6 +1258,26 @@ const var parse(const std::wstring &x, const bool isConst = false) {
       return var(std::stod(p), isConst);
   }
   return var(genExpression(splitExpression(p)), isConst);
+}
+const var instanceOf(const var_tp &i) {
+  switch (i) {
+    case Int:
+      return 0;
+    case Boolean:
+      return false;
+    case String:
+      return L"";
+    case Array:
+      return std::vector<var>();
+    case Object:
+      return std::map<std::wstring, var>();
+    case Null:
+      return Variable::var();
+    case Function:
+      return var::Func_temp();
+    default:
+      return nullptr;
+  }
 }
 };  // namespace Variable
 #endif
