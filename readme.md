@@ -9,7 +9,7 @@ Copyright(c) 2021 nu11ptr team.
 
 ### Based on C++ Standard template libraries
 
-You don't need any other library to create a minimal L programming language,such as "iomanip" or "iostream".
+You don't need any other library to create a minimal L++ programming language,such as "iomanip" or "iostream".
 
 ### Expansibility
 
