@@ -286,8 +286,7 @@ typedef struct Lpp : public Lpp_base {
       return false;
     }
   }
-  const bool isStatement(const std::wstring &x) const {
-    Lpp_base &&a = Lpp_base(Variable::clearnull(x));
+  const bool isStatement(const Lpp_base &a) const {
     try {
       return isKeyword(a.name) ||
              (a.args.size() == 1 &&
@@ -295,6 +294,30 @@ typedef struct Lpp : public Lpp_base {
     } catch (...) {
       return false;
     }
+  }
+  static const std::pair<std::wstring, std::wstring> splitStmt(
+      const std::wstring &p) {
+    std::wstring f;
+    for (size_t i = p.length() - 1, a = 0, j = 1, z = 0; i > 0; i--) {
+      if (p[i] == L'\\')
+        z = !z;
+      else if (p[i] == L'\"' && !z) {
+        if (a == 0 || a == 1) a = !a;
+      } else if (p[i] == L'\'' && !z) {
+        if (a == 0 || a == 2) a = ((!a) == 1 ? 2 : 0);
+      } else
+        z = 0;
+      if ((p[i] == L'[' || p[i] == L'{' || p[i] == L'(') && a == 0)
+        j++;
+      else if ((p[i] == L']' || p[i] == L'}' || p[i] == L')') && a == 0)
+        j--;
+      if ((p[i] == L'{' || p[i] == L'[' || p[i] == L'(') && a == 0 && j == 1) {
+        f = p[i] + f;
+        break;
+      } else
+        f = p[i] + f;
+    }
+    return std::make_pair(p.substr(0,p.length()-f.length()), f);
   }
   void funcarg_set(Variable::var &use_scope, Variable::var &scope,
                    Variable::var &all_scope, Variable::var &this_scope,
@@ -320,7 +343,7 @@ typedef struct Lpp : public Lpp_base {
     if (get_first_name(n) == L"") {
       throw member_not_exist;
     }
-    if (isStatement(n)) {
+    if (isStatement(Lpp_base(Variable::clearnull(n)))) {
       Return_Value s = Lpp(n, cmd).eval(scope, all_scope, this_scope);
       if (s.tp != Calc_Value)
         throw s;
@@ -515,7 +538,7 @@ typedef struct Lpp : public Lpp_base {
     }  // return var(exp);
     if (exp.ExpressionValue.size() == 0) return nullptr;
     if (exp.ExpressionValue.size() == 1 &&
-        !isStatement(exp.ExpressionValue[0]) &&
+        !isStatement(Lpp_base(Variable::clearnull(exp.ExpressionValue[0]))) &&
         !Variable::isExpression(exp.ExpressionValue[0]) &&
         exp.ExpressionValue[0][0] != L'-') {
       if (get_first_name(exp.ExpressionValue[0]) == exp.ExpressionValue[0] &&

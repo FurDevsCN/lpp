@@ -3,7 +3,7 @@ if (!ext),{
   throw "Your L++ interpreter does not support extend libraries.";
 }
 # cout
-const default_output={"operator()":function(){ext "print",[arguments[0]]}}; # output stream is set to /bin/echo (linux)
+const default_output={"operator()":function(){ext print[arguments[0]]}}; # output stream is set to /bin/echo (linux)
 var cout_stream=function(output=default_output){ #modify argument 'output' to redirect cout.
   if (instance this)!=cout_stream,{
     throw "'new' is required";
@@ -15,7 +15,7 @@ var cout_stream=function(output=default_output){ #modify argument 'output' to re
   };
 }
 # cin
-const default_input={"operator()":function(){return (ext "getline",[])}};
+const default_input={"operator()":function(){return (ext getline[])}};
 var cin_stream=function(input=default_input){
   if (instance this)!=cin_stream,{
     throw "'new' is required";
@@ -23,8 +23,8 @@ var cin_stream=function(input=default_input){
   this["_input"]=default_input;
   this["getline"]=function(){return (this["_input"] [])};
 }
-const cin=(new cin_stream); #default cin
-const cout=(new cout_stream); #default cout
+const cin=(new cin_stream[]); #default cin
+const cout=(new cout_stream[]); #default cout
 const endl="\n"; #default endline
 if (!export),{ #not import?
   cout<<"C++-like iostream test by nu11ptr"<<endl;

@@ -231,23 +231,23 @@ switch 4,[1={
 }];#a="default"
 ```
 
-**while \[exp\],\[fn\]** : Repeats statement block \[fn\] until the condition \[exp\] is not equal to true.  
+**while (\[exp\])\[fn\]** : Repeats statement block \[fn\] until the condition \[exp\] is not equal to true.  
 sample\[1\]:
 
 ```
 var a=4,b=0;
-while b!=a,{
+while (b!=a){
   b++;
 };#it will repeat 4 times.
 ```
 
-**for \(\[settings\]\),\[fn\]** : Repeats statement block \[fn\].
+**for \(\[settings\]\)\[fn\]** : Repeats statement block \[fn\].
 setting's format:\(start(first time);exp(expression,if it is not equal to true,the loop will not start.If it is not spe);routine(executes after once loop)\)  
 sample\[1\]:
 
 ```
 var a=4,b=0;
-for (var i=0;i!=a;i++),{
+for (var i=0;i!=a;i++){
     b++;
 };#after this,variable 'b' will be 4.
 ```
@@ -257,10 +257,10 @@ for (var i=0;i!=a;i++),{
 sample\[1\]:
 
 ```
-while 1,{
+while (1){
     break;#it is not a dead loop.
 }
-while 1,{
+while (1){
     continue;#it is a dead loop.
 }
 ```
@@ -272,14 +272,14 @@ sample\[1\]:
 return 0;#returns 0.
 ```
 
-**new \[fn\]\(,arguments=[]\)** : Puts the function in the object and execute it.(_arguments_ must be an **array** and **cannot** be a variable.)  
+**new \[fn\]\[arguments\]** : Puts the function in the object and execute it.(_arguments_ must be an **array** and **cannot** be a variable.)  
 sample\[1\]:
 
 ```
 const fn=function(a){
     this["a"]=a;
 };
-var a=(new fn,[1]);
+var a=(new fn[1]);
 #a = {"a":1}
 ```
 
@@ -290,7 +290,7 @@ var t=function(){
   this["a"]=(new);
 }
 var s=(new);#false
-var q=(new t);#{"a":true}
+var q=(new t[]);#{"a":true}
 ```
 
 **instance \[obj\]** : Gets instance of obj. It will return a function\(new\),or something else.  
@@ -299,7 +299,7 @@ sample\[1\]:
 ```
 instance {};#{}
 var A=function(){this["a"]=1;}
-instance (new A);#function...
+instance (new A[]);#function...
 ```
 
 **\[fn\] \[arguments\]** : Calls function \[fn\] and set variable 'arguments'\(and function argument list\) to \[arguments\].(_arguments_ must be an **array** and **cannot** be a variable.)  
@@ -395,7 +395,7 @@ a.t;#true
 
 ### Extend Commands(use ENABLE_EXT to enable)
 
-**ext \[name\],\[arguments\]** Calls the extend function **name** with **arguments**.name **must** be String.If zero arguments given,then returns true if the extend functions enabled.  
+**ext \[name\]\[arguments\]** Calls the extend function **name** with **arguments**.name **must** be an identifier.If zero arguments given,then returns true if the extend functions enabled.  
 sample\[1\]:
 
 ```
@@ -403,7 +403,7 @@ sample\[1\]:
 # system [name:string,arguments:array] -> execute a program.
 # getline [] -> get a line from stdin.
 # print [any,...] -> print a(n) string/object to screen.
-ext "print",["Hello World!"];# Hello World!
+ext print["Hello World!"];# Hello World!
 ```
 
 **void \[expr\]** Calculates the **expr** and returns **null**.  
