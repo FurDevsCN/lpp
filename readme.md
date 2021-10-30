@@ -57,10 +57,11 @@ const Variable::var exp_calc(const Variable::var &exp, Variable::var &scope,
 
 You can use it to **calculate** values.It will return a **const** value.  
 Use **cmd.exp_calc** to call it.  
-Maybe you want use **parse** function with it.
+Maybe you want to use **parse** function with it.
 
 ```
-cmd.exp_calc(Variable::parse(something),scope,all_scope,this_scope);
+cmd.exp_calc(Variable::var,scope,all_scope,this_scope)
+cmd.exp_calc(Variable::parse(std::wstring),scope,all_scope,this_scope);
 ```
 
 ##### Lpp::Lpp::get_object
