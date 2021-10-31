@@ -699,7 +699,9 @@ typedef class var {
           tmp += var(it->first).toString() + L":";
           tmp += it->second.toString();
           if ((++std::map<std::wstring, var>::const_iterator(it)) !=
-              ObjectValue.cend())
+                  ObjectValue.cend() &&
+              (++std::map<std::wstring, var>::const_iterator(it))->first !=
+                  L"__constructor__")
             tmp += L",";
         }
         return tmp + L"}";
@@ -1222,8 +1224,8 @@ const var parse(const std::wstring &x, const bool isConst = false) {
         }
         return var::Func_temp(arg, var::Stmt_temp(code_split(cont_temp)));
       }
-      if ((p[0] == L'{' || p[0] == L'[') &&
-          (p[p.length() - 1] == L'}' || p[p.length() - 1] == L']')) {
+      if ((p[0] == L'{' && p[p.length() - 1] == L'}') ||
+          (p[0] == L'[' && p[p.length() - 1] == L']')) {
         std::vector<std::wstring> temp =
             splitBy(clearnull(p.substr(1, p.length() - 2)), ',');
         std::map<std::wstring, var> ret;
@@ -1238,7 +1240,7 @@ const var parse(const std::wstring &x, const bool isConst = false) {
                   isConst);
             var t = parse(temp2[0]);
             if (t.tp != String) throw ExprErr(L"Object's key must be a string");
-            ret[Variable::parse(temp2[0]).StringValue] = parse(temp2[1], false);
+            ret[parse(temp2[0]).StringValue] = parse(temp2[1], false);
           } else
             ret2.push_back(parse(temp[i], false));
         }

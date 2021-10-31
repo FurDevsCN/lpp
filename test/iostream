@@ -2,20 +2,26 @@
 if (!ext),{
   throw "Your L++ interpreter does not support extend libraries.";
 }
-# cout
-const default_output={"operator()":function(){ext print[arguments[0]]}}; # output stream is set to /bin/echo (linux)
-var cout_stream=function(output=default_output){ #modify argument 'output' to redirect cout.
+# console object
+const default_output={"write":function(item){ext print[item]}};
+const default_input={"read":function(){return (ext getline[])}};
+var console_prototype=function(output=default_output,input=default_input){
   if (instance this)!=cout_stream,{
     throw "'new' is required";
   };
   this["_output"]=output;#outputer
-  this["operator<<"]=function(lhs,rhs){ #lhs:this stream rhs:value
-    this["_output"] [rhs];
-    return this;# cout<<1<<2<<...
+  this["_input"]=input;#inputer
+  this["log"]=function(){
+    for (var i=0;i<arguments.length;i++){
+      this["_output"]["write"] [arguments[i]];
+     };
+  };
+  this["readline"]=function(){
+    return (this["_input"]["read"] [t]);
   };
 }
 # cin
-const default_input={"operator()":function(){return (ext getline[])}};
+
 var cin_stream=function(input=default_input){
   if (instance this)!=cin_stream,{
     throw "'new' is required";
@@ -23,15 +29,13 @@ var cin_stream=function(input=default_input){
   this["_input"]=default_input;
   this["getline"]=function(){return (this["_input"] [])};
 }
-const cin=(new cin_stream[]); #default cin
-const cout=(new cout_stream[]); #default cout
+const console=new console_prototype[];
 const endl="\n"; #default endline
 if (!export),{ #not import?
-  cout<<"C++-like iostream test by nu11ptr"<<endl;
-  cout<<"Copyright(c) 2021 nu11ptr team."<<endl;
-  cout<<"Hint:Use \"import\" to import this library."<<endl;
+  console.log ["C++-like iostream test by nu11ptr",endl];
+  console.log ["Copyright(c) 2021 nu11ptr team.",endl];
+  console.log ["Hint:Use \"import\" to import this library.",endl];
 },{
   export endl=endl;#export endl as endl
-  export cout=cout;#export cout as cout
-  export cin=cin;#export cin as cin
+  export console=console;
 }

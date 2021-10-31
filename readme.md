@@ -13,7 +13,7 @@ You don't need any other library to create a minimal L++ programming language,su
 
 ### Expansibility
 
-The L++ programming language use lambda function to let you add your own functions.  
+The L++ programming language uses lambda function to let you add your own functions.  
 Read [How to develop](#how-to-develop) to develop custom commands.
 
 ### How to develop
@@ -55,9 +55,9 @@ const Variable::var exp_calc(const Variable::var &exp, Variable::var &scope,
                                const bool newObjectIsConst = false) const;
 ```
 
-You can use it to **calculate** values.It will return a **const** value.  
+You can use it to **calculate** values. It will return a **const** value.  
 Use **cmd.exp_calc** to call it.  
-Maybe you want to use **parse** function with it.
+Maybe you want to use **Variable::parse** function with it.
 
 ```
 cmd.exp_calc(Variable::var,scope,all_scope,this_scope)
@@ -120,14 +120,14 @@ You can use it to **get** the value by name.Here is the Return_Object's introduc
 
 ##### Variable::var
 
-Please see **var.h**::Variable::var() for more informations.
+Please see **var.h**::Variable::var() for more information.
 
 ##### Variable::parse
 
 ```
 /*
 const std::wstring &x : The string that will be parsed.
-const bool isConst : The parsed value's isConst property.
+const bool isConst : The parsing value's isConst property.
 */
 const var parse(const std::wstring &x, const bool isConst = false);
 ```
@@ -138,7 +138,7 @@ Parse the string to Variable.
 
 ##### Variable::var_tp
 
-Please see **var.h**::Variable::var_tp for more informations.
+Please see **var.h**::Variable::var_tp for more information.
 
 ### Variables
 
@@ -191,15 +191,15 @@ var b=1;#b=1,b.isConst=false
 const a=b;#a=1,a.isConst=true
 ```
 
-**delete \[name1\],\[name2\],...** : Deletes \[name\].CANNOT DELETE A CONST VARIABLE!It will return count of successfully deleted.  
+**delete \[var\]** : Deletes \[var\].CANNOT DELETE A CONST VARIABLE!It will return true if \[var\] has been successfully deleted.  
 sample\[1\]:
 
 ```
 var a;
-delete a;# = 1
-a # ExpressionError
+delete a;# = true
+a # null
 const a;
-delete a;# = 0
+delete a;# = false
 ```
 
 **if \[exp\],\[then\]\(,else=\(\)\)** If condition \[exp\] is equal to true,it will execute statement block \[then\].Otherwise,it will execute statement block \(else\) \(if it is specified\).  
@@ -363,7 +363,7 @@ s=(char 97);# s = "a"
 s=(char 'a');# s = 97
 ```
 
-**import \[path\]** Imports path as a L++ script.It will be an object and you can use **member operator** to access it's member.path **must** be String.  
+**import \[path\]** Imports path as a L++ script. It will be an object and you can use **member operator** to access it's member.path **must** be String.  
 sample\[1\]:
 
 ```
@@ -371,7 +371,7 @@ var a=(import "test.lpp");
 a.test [];#...
 ```
 
-**export \[name\]=\[value\]** Exports value as a name.It will be visibility in the object.  
+**export \[name\]=\[value\]** Exports value as a name. It will be visibility in the object.  
 sample\[1\]:
 
 ```
@@ -434,7 +434,6 @@ using **object.\[the name of the member\]** or **object\[\["the name of the memb
 ### Overload
 
 You can use this\["..."\] to override a native function.  
-You can define operator... to overload a operate\(+,-,\*,etc.\)
 
 ### Sample
 

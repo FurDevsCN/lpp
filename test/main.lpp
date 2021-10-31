@@ -2,23 +2,22 @@
 var std=(import "iostream");
 #main function start
 const main=function(argc,argv){
-  std.cout<<"Hello World!"<<std.endl;
-  std.cout<<"Your name:";
-  var x=std.cin.getline [];
-  std.cout<<"Welcome,"<<x<<"!"<<std.endl;
-  std.cout<<"Now please input two numbers,using space to split"<<std.endl;
-  var s=(std.cin.getline []).split [" "];
+  std.console.log ["Hello World!",std.endl];
+  std.console.log ["Your name:"];
+  var x=std.console.readline [];
+  std.console.log ["Welcome,",x,"!",std.endl];
+  std.console.log ["Now please input two numbers,use space to split",std.endl];
+  var s=(std.console.readline []).split [" "];
   if (s.length!=2),{
-    std.cout<<"please input TWO numbers!"<<std.endl;
+    std.console.log ["please input TWO numbers!",std.endl];
     return 1;
   };
   var a,b;
   try {a=(int s[0]);b=(int s[1]);},catch={
-    std.cout<<"number is invalid!"<<std.endl;
+    std.console.log ["number is invalid!",std.endl];
     return 1;
   };
-  std.cout<<"final:"<<(a+b)<<std.endl;
+  std.console.log ["final:",(a+b),std.endl];
   return 0;#return value
 }
-main [arguments.length,arguments];
-#return (main [arguments.length,arguments]);
+return (main [arguments.length,arguments]);

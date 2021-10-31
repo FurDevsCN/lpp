@@ -192,8 +192,18 @@ typedef struct Lpp : public Lpp_base {
     const bool native() const { return isNative; }
     Variable::var &getValue() { return *value; }
     Variable::var &getParent() { return *parent; }
-    const Variable::var &getConstValue() { return const_value; }
-    const Variable::var &getConstParent() { return const_parent; }
+    const Variable::var &getConstValue() {
+      if (tp == is_const_value)
+        return const_value;
+      else
+        return *value;
+    }
+    const Variable::var &getConstParent() {
+      if (tp == is_const_value)
+        return const_parent;
+      else
+        return *parent;
+    }
     Variable::var &getThis() { return *this_object; }
     Object_Type tp;
     Return_Object() {
@@ -202,51 +212,39 @@ typedef struct Lpp : public Lpp_base {
       parent = nullptr;
       lastIsThis = false;
     }
-    Return_Object(const Variable::var &x, Variable::var *p, Variable::var *s,
+    Return_Object(const Variable::var &x, Variable::var &p, Variable::var &s,
                   const bool l) {
       tp = is_const_value;
       const_value = x;
-      parent = p;
-      if (p != nullptr) const_parent = *p;
-      this_object = s;
+      parent = &p;
+      // if (p != nullptr) const_parent = *p;
+      this_object = &s;
       lastIsThis = l;
     }
     Return_Object(const Variable::var &x, const Variable::var &p,
-                  Variable::var *s, const bool l) {
+                  Variable::var &s, const bool l) {
       tp = is_const_value;
       const_value = x;
       const_parent = p;
-      this_object = s;
+      this_object = &s;
       lastIsThis = l;
     }
-    Return_Object(Variable::var *x, Variable::var *p, Variable::var *s,
+    Return_Object(Variable::var &x, Variable::var &p, Variable::var &s,
                   const bool l) {
       tp = is_pointer;
-      value = x;
-      const_value = *x;
-      parent = p;
-      if (p != nullptr) const_parent = *p;
-      this_object = s;
+      value = &x;
+      parent = &p;
+      // if (p != nullptr) const_parent = *p;
+      this_object = &s;
       lastIsThis = l;
     }
     Return_Object(const std::nullptr_t &x, const Variable::var &w,
-                  const Variable::var &p, Variable::var *s, const bool l) {
+                  const Variable::var &p, Variable::var &s, const bool l) {
       tp = is_const_value;
       isNative = true;
       const_value = w;
       const_parent = p;
-      this_object = s;
-      lastIsThis = l;
-    }
-    Return_Object(const std::nullptr_t &x, Variable::var *w, Variable::var *p,
-                  Variable::var *s, const bool l) {
-      tp = is_pointer;
-      isNative = true;
-      value = w;
-      const_value = *w;
-      parent = p;
-      if (p != nullptr) const_parent = *p;
-      this_object = s;
+      this_object = &s;
       lastIsThis = l;
     }
   } Return_Object;
@@ -299,7 +297,7 @@ typedef struct Lpp : public Lpp_base {
       const std::wstring &p) {
     std::wstring f;
     for (size_t i = p.length() - 1, a = 0, j = 1, z = 0; i > 0; i--) {
-      if (p[i] == L'\\')
+      if (i > 0 && p[i - 1] == L'\\')
         z = !z;
       else if (p[i] == L'\"' && !z) {
         if (a == 0 || a == 1) a = !a;
@@ -317,7 +315,7 @@ typedef struct Lpp : public Lpp_base {
       } else
         f = p[i] + f;
     }
-    return std::make_pair(p.substr(0,p.length()-f.length()), f);
+    return std::make_pair(p.substr(0, p.length() - f.length()), f);
   }
   void funcarg_set(Variable::var &use_scope, Variable::var &scope,
                    Variable::var &all_scope, Variable::var &this_scope,
@@ -348,35 +346,35 @@ typedef struct Lpp : public Lpp_base {
       if (s.tp != Calc_Value)
         throw s;
       else
-        return Return_Object(s.value, &scope, &scope, false);
+        return Return_Object(s.value, scope, scope, false);
     }
     if (get_first_name(n) == n) {
       if (!isIdentifier(n) && n != L"arguments" &&
           (Variable::isExpression(n) ||
            Variable::parse(n).tp != Variable::Expression)) {
         return Return_Object(
-            exp_calc(Variable::parse(n), scope, all_scope, this_scope), &scope,
-            &scope, false);
+            exp_calc(Variable::parse(n), scope, all_scope, this_scope), scope,
+            scope, false);
       } else if (n == L"this") {
-        return Return_Object(&this_scope, &this_scope, &this_scope, true);
+        return Return_Object(this_scope, this_scope, this_scope, true);
       } else if (scope.ObjectValue.find(n) != scope.ObjectValue.cend()) {
-        return Return_Object(&scope.ObjectValue[n], &this_scope, &this_scope,
+        return Return_Object(scope.ObjectValue[n], this_scope, this_scope,
                              false);
       } else if (all_scope.ObjectValue.find(n) !=
                  all_scope.ObjectValue.cend()) {
-        return Return_Object(&all_scope.ObjectValue[n], &all_scope, &all_scope,
+        return Return_Object(all_scope.ObjectValue[n], all_scope, all_scope,
                              false);
       } else {
         if (Variable::isExpression(n)) {
           return Return_Object(
-              exp_calc(Variable::parse(n), scope, all_scope, this_scope),
-              &scope, &scope, false);
+              exp_calc(Variable::parse(n), scope, all_scope, this_scope), scope,
+              scope, false);
         } else if (nonewobject) {
-          return Return_Object(Variable::var(nullptr), &scope, &scope, false);
+          return Return_Object(Variable::var(nullptr), scope, scope, false);
         } else {
           scope.ObjectValue[n].isConst = false;
           scope.ObjectValue[n].tp = Variable::Null;
-          return Return_Object(&scope.ObjectValue[n], &scope, &scope, false);
+          return Return_Object(scope.ObjectValue[n], scope, scope, false);
         }
       }
     } else {
@@ -385,18 +383,18 @@ typedef struct Lpp : public Lpp_base {
       if (fst_nme == L"this") {
         return get_var_index(
             n.substr(fst_nme.length()),
-            Return_Object(&this_scope, &this_scope, &this_scope, false), scope,
+            Return_Object(this_scope, this_scope, this_scope, false), scope,
             all_scope, this_scope, nonewobject, true, nonative);
       } else if (scope.ObjectValue.find(fst_nme) != scope.ObjectValue.cend()) {
         return get_var_index(
             n.substr(fst_nme.length()),
-            Return_Object(&scope.ObjectValue[fst_nme], &scope, &scope, false),
+            Return_Object(scope.ObjectValue[fst_nme], scope, scope, false),
             scope, all_scope, this_scope, nonewobject, false, nonative);
       } else if (all_scope.ObjectValue.find(fst_nme) !=
                  all_scope.ObjectValue.cend()) {
         return get_var_index(n.substr(fst_nme.length()),
-                             Return_Object(&all_scope.ObjectValue[fst_nme],
-                                           &all_scope, &all_scope, false),
+                             Return_Object(all_scope.ObjectValue[fst_nme],
+                                           all_scope, all_scope, false),
                              scope, all_scope, this_scope, nonewobject, false,
                              nonative);
       } else
@@ -404,7 +402,7 @@ typedef struct Lpp : public Lpp_base {
             n.substr(fst_nme.length()),
             Return_Object(exp_calc(Variable::parse(fst_nme), scope, all_scope,
                                    this_scope),
-                          &scope, &scope, false),
+                          scope, scope, false),
             scope, all_scope, this_scope, nonewobject, false, nonative);
     }
   }
@@ -540,7 +538,7 @@ typedef struct Lpp : public Lpp_base {
     if (exp.ExpressionValue.size() == 1 &&
         !isStatement(Lpp_base(Variable::clearnull(exp.ExpressionValue[0]))) &&
         !Variable::isExpression(exp.ExpressionValue[0]) &&
-        exp.ExpressionValue[0][0] != L'-') {
+        exp.ExpressionValue[0][0] != L'-') {  // variable
       if (get_first_name(exp.ExpressionValue[0]) == exp.ExpressionValue[0] &&
           !isIdentifier(exp.ExpressionValue[0]) &&
           exp.ExpressionValue[0] != L"arguments")
@@ -548,7 +546,16 @@ typedef struct Lpp : public Lpp_base {
       Return_Object o = get_object(exp.ExpressionValue[0], scope, all_scope,
                                    this_scope, true, false);
       return o.getConstValue();
-    }  // is a variable
+    } else if (exp.ExpressionValue.size() == 1 &&
+               isStatement(
+                   Lpp_base(Variable::clearnull(exp.ExpressionValue[0])))) {
+      const Exec_Info &i =
+          Lpp(exp.ExpressionValue[0], cmd).eval(scope, all_scope, this_scope);
+      if (i.tp != Calc_Value)
+        throw i;
+      else
+        return i.value;
+    }
     for (std::vector<std::wstring>::const_reverse_iterator i = p.crbegin();
          i != p.crend(); i++) {
       if (Variable::get_op_priority(*i) != -1) {  // operator
@@ -558,30 +565,17 @@ typedef struct Lpp : public Lpp_base {
             op != L"||" && op != L"&&" && op != L"++" && op != L"--" &&
             op != L"," && op != L"~" && op != L"!") {
           if ((op == L"-" || op == L"+") && st.size() > 0 && st.size() < 2) {
-            res = st[st.size() - 1].opcall_single(op);
+            res = exp_calc(st[st.size() - 1], scope, all_scope, this_scope)
+                      .opcall_single(op);
             is_single = true;
           } else {
             if (st.size() < 2) throw Variable::ExprErr(L"Too few operands");
-            if (st[st.size() - 1].tp == Variable::Object &&
-                st[st.size() - 1].ObjectValue.find(L"operator" + op) !=
-                    st[st.size() - 1].ObjectValue.cend()) {
-              if (st[st.size() - 1].ObjectValue[L"operator" + op].tp !=
-                  Variable::Function)
-                throw Variable::ExprErr(L"operator is not Variable::Function");
-              Variable::var temp_scope;
-              temp_scope.isConst = false;
-              temp_scope.tp = Variable::Object;
-              try {
-                res = RunFunc(st[st.size() - 1].ObjectValue[L"operator" + op],
-                              temp_scope, all_scope, st[st.size() - 1],
-                              std::vector<Variable::var>(
-                                  {st[st.size() - 1], st[st.size() - 2]}),
-                              false);
-              } catch (const Exec_Info &x) {
-                throw x;
-              }
-            } else
-              res = st[st.size() - 1].opcall(op, st[st.size() - 2]);
+            // Return_Object l = get_object(st[st.size() -
+            // 1].ExpressionValue[0], scope, all_scope, this_scope, true,false);
+            // Variable::var tmp = l.getConstValue();
+            res = exp_calc(st[st.size() - 1], scope, all_scope, this_scope)
+                      .opcall(op, exp_calc(st[st.size() - 2], scope, all_scope,
+                                           this_scope));
           }
         } else if (op[op.length() - 1] == L'=') {
           if (st.size() < 2) throw Variable::ExprErr(L"Too few operands");
@@ -606,33 +600,17 @@ typedef struct Lpp : public Lpp_base {
                 throw Variable::ExprErr(
                     L"this object cannot be covered by a non-object value");
             }
-            q.getValue() = st[st.size() - 2];
+            q.getValue() =
+                exp_calc(st[st.size() - 2], scope, all_scope, this_scope);
             q.getValue().isConst = newObjectIsConst;
             res = q.getValue();
           } else {
             Variable::var setvalue;
-            Variable::var &temp = q.getValue();
             std::wstring &&setop = op.substr(0, op.length() - 1);
-            if (temp.tp == Variable::Object &&
-                temp.ObjectValue.find(L"operator" + setop) !=
-                    temp.ObjectValue.cend()) {
-              if (temp.ObjectValue[L"operator" + setop].tp !=
-                  Variable::Function)
-                throw Variable::ExprErr(L"operator is not Variable::Function");
-              Variable::var temp_scope;
-              temp_scope.isConst = false;
-              temp_scope.tp = Variable::Object;
-              try {
-                setvalue = RunFunc(temp.ObjectValue[L"operator" + setop],
-                                   temp_scope, all_scope, q.getValue(),
-                                   std::vector<Variable::var>(
-                                       {q.getValue(), st[st.size() - 2]}),
-                                   false);
-              } catch (const Exec_Info &x) {
-                throw x;
-              }
-            } else
-              setvalue = q.getValue().opcall(setop, st[st.size() - 2]);
+
+            setvalue = q.getValue().opcall(
+                setop,
+                exp_calc(st[st.size() - 2], scope, all_scope, this_scope));
             q.getValue() = setvalue;
             q.getValue().isConst = false;
             res = q.getValue();
@@ -647,25 +625,7 @@ typedef struct Lpp : public Lpp_base {
           }
           Variable::var setvalue;
           std::wstring &&setop = op.substr(0, 1);
-          if (q.getValue().tp == Variable::Object &&
-              q.getValue().ObjectValue.find(L"opreator" + setop) !=
-                  q.getValue().ObjectValue.cend()) {
-            if (q.getValue().ObjectValue[L"operator" + setop].tp !=
-                Variable::Function)
-              throw Variable::ExprErr(L"operator is not Variable::Function");
-            Variable::var temp_scope;
-            temp_scope.isConst = false;
-            temp_scope.tp = Variable::Object;
-            try {
-              setvalue =
-                  RunFunc(q.getValue().ObjectValue[L"operator" + setop],
-                          temp_scope, all_scope, this_scope,
-                          std::vector<Variable::var>({q.getValue(), 1}), false);
-            } catch (const Exec_Info &x) {
-              throw x;
-            }
-          } else
-            setvalue = q.getValue().opcall(setop, 1);
+          setvalue = q.getValue().opcall(setop, 1);
           const Variable::var backup = q.getValue();
           q.getValue() = setvalue;
           q.getValue().isConst = false;
@@ -676,30 +636,34 @@ typedef struct Lpp : public Lpp_base {
         } else if (op == L"!" || op == L"~") {
           is_single = true;
           if (st.size() < 1) throw Variable::ExprErr(L"Too few operands");
-          if (st[st.size() - 1].tp == Variable::Object &&
-              st[st.size() - 1].ObjectValue.find(L"opreator" + op) !=
-                  st[st.size() - 1].ObjectValue.cend()) {
-            if (st[st.size() - 1].ObjectValue[L"operator" + op].tp !=
-                Variable::Function)
-              throw Variable::ExprErr(L"operator is not Variable::Function");
-            Variable::var temp_scope;
-            temp_scope.isConst = false;
-            temp_scope.tp = Variable::Object;
-            try {
-              res = RunFunc(st[st.size() - 1].ObjectValue[L"operator" + op],
-                            temp_scope, all_scope, st[st.size() - 1],
-                            std::vector<Variable::var>({}), false);
-            } catch (const Exec_Info &x) {
-              throw x;
-            }
-          } else
-            res = st[st.size() - 1].opcall_single(op);
+          res = exp_calc(st[st.size() - 1], scope, all_scope, this_scope)
+                    .opcall_single(op);
         } else if (op == L"&&") {
           if (st.size() < 2) throw Variable::ExprErr(L"Too few operands");
-          res = st[st.size() - 1].opcall(L"&&", st[st.size() - 2]);
+          if (Variable::var(true)
+                  .opcall(L"==", exp_calc(st[st.size() - 1], scope, all_scope,
+                                          this_scope))
+                  .BooleanValue &&
+              Variable::var(true)
+                  .opcall(L"==", exp_calc(st[st.size() - 2], scope, all_scope,
+                                          this_scope))
+                  .BooleanValue) {
+            res = true;
+          } else
+            res = false;
         } else if (op == L"||") {
           if (st.size() < 2) throw Variable::ExprErr(L"Too few operands");
-          res = st[st.size() - 1].opcall(L"||", st[st.size() - 2]);
+          if (Variable::var(true)
+                  .opcall(L"==", exp_calc(st[st.size() - 1], scope, all_scope,
+                                          this_scope))
+                  .BooleanValue ||
+              Variable::var(true)
+                  .opcall(L"==", exp_calc(st[st.size() - 2], scope, all_scope,
+                                          this_scope))
+                  .BooleanValue) {
+            res = true;
+          } else
+            res = false;
         } else
           throw Variable::ExprErr(L"Unknown operator");
         if (!is_single) st.pop_back();
@@ -721,22 +685,16 @@ typedef struct Lpp : public Lpp_base {
           if (i + 1 == p.crend()) {
             throw Variable::SyntaxErr(L"Member operator syntax is invalid");
           }
-          Return_Object &&s = get_object(L"(" + *(i + 1) + L")" + (*i), scope,
-                                         all_scope, this_scope, false, false);
-          st.push_back(s.getConstValue());
+          st.push_back(Variable::var(
+              std::vector<std::wstring>(1, L"(" + *(i + 1) + L")" + (*i))));
           i++;
         } else {
-          const Exec_Info &temp =
-              Lpp(*i, cmd).eval(scope, all_scope, this_scope);
-          if (temp.tp == Throw_Value)
-            throw temp;
-          else
-            st.push_back(temp.value);
+          st.push_back(Variable::parse(*i));
         }
       }
     }
     if (st.size() != 1) throw Variable::ExprErr(L"st.size()!=1");
-    return st[0];
+    return exp_calc(st[0], scope, all_scope, this_scope);
   }
   static const Variable::var exclude_scope(Variable::var scope,
                                            Variable::var temp_scope) {
@@ -744,35 +702,6 @@ typedef struct Lpp : public Lpp_base {
              temp_scope.ObjectValue.cbegin();
          x != temp_scope.ObjectValue.cend(); x++) {
       if (scope.ObjectValue.find(x->first) != scope.ObjectValue.cend())
-        temp_scope.ObjectValue[x->first].remove();
-    }
-    temp_scope.update();
-    return temp_scope;
-  }
-
- private:
-  static const Variable::var update_scope(Variable::var scope,
-                                          Variable::var temp_scope) {
-    for (std::map<std::wstring, Variable::var>::const_iterator x =
-             scope.ObjectValue.cbegin();
-         x != scope.ObjectValue.cend(); x++) {
-      if (temp_scope.ObjectValue.find(x->first) ==
-          temp_scope.ObjectValue.cend())
-        scope.ObjectValue[x->first].remove();
-      else
-        scope.ObjectValue[x->first] = temp_scope.ObjectValue[x->first];
-    }
-    scope.update();
-    return scope;
-  }
-  static const Variable::var update_scope2(const Variable::var &scope,
-                                           Variable::var temp_scope,
-                                           const Variable::var &exclude) {
-    for (std::map<std::wstring, Variable::var>::const_iterator x =
-             temp_scope.ObjectValue.cbegin();
-         x != temp_scope.ObjectValue.cend(); x++) {
-      if (scope.ObjectValue.find(x->first) == scope.ObjectValue.cend() &&
-          exclude.ObjectValue.find(x->first) == exclude.ObjectValue.cend())
         temp_scope.ObjectValue[x->first].remove();
     }
     temp_scope.update();
@@ -803,6 +732,35 @@ typedef struct Lpp : public Lpp_base {
         temp += p[i];
     }
     return temp;
+  }
+
+ private:
+  static const Variable::var update_scope(Variable::var scope,
+                                          Variable::var temp_scope) {
+    for (std::map<std::wstring, Variable::var>::const_iterator x =
+             scope.ObjectValue.cbegin();
+         x != scope.ObjectValue.cend(); x++) {
+      if (temp_scope.ObjectValue.find(x->first) ==
+          temp_scope.ObjectValue.cend())
+        scope.ObjectValue[x->first].remove();
+      else
+        scope.ObjectValue[x->first] = temp_scope.ObjectValue[x->first];
+    }
+    scope.update();
+    return scope;
+  }
+  static const Variable::var update_scope2(const Variable::var &scope,
+                                           Variable::var temp_scope,
+                                           const Variable::var &exclude) {
+    for (std::map<std::wstring, Variable::var>::const_iterator x =
+             temp_scope.ObjectValue.cbegin();
+         x != temp_scope.ObjectValue.cend(); x++) {
+      if (scope.ObjectValue.find(x->first) == scope.ObjectValue.cend() &&
+          exclude.ObjectValue.find(x->first) == exclude.ObjectValue.cend())
+        temp_scope.ObjectValue[x->first].remove();
+    }
+    temp_scope.update();
+    return temp_scope;
   }
   static const std::vector<std::wstring> get_name_split(const std::wstring &p) {
     std::vector<std::wstring> visit;
@@ -853,10 +811,16 @@ typedef struct Lpp : public Lpp_base {
       const bool no_overload) const {
     const std::vector<std::wstring> visit = get_name_split(p);
     Object_Type fin = object.tp;
-    Variable::var *now_object = &object.getValue(),
-                  *parent_object = &object.getParent(), *this_object;
-    Variable::var now_const_object = object.getConstValue(),
-                  parent_const_object = object.getConstParent();
+    Variable::var *now_object = nullptr, *parent_object = nullptr,
+                  *this_object = nullptr;
+    Variable::var now_const_object, parent_const_object;
+    if (fin == is_const_value) {
+      now_const_object = object.getConstValue();
+      parent_const_object = object.getConstParent();
+    } else {
+      now_object = &object.getValue();
+      parent_object = &object.getParent();
+    }
     bool this_keep = startwiththis;
     bool lastisthis = startwiththis;
     // bool isConst = false;  // only for is_native_function
@@ -1164,7 +1128,8 @@ typedef struct Lpp : public Lpp_base {
                   now_const_object = nullptr;
                 else {
                   parent_const_object = now_const_object;
-                  now_const_object = now_const_object.ObjectValue[find_str];
+                  now_const_object = Variable::var(
+                      now_const_object.ObjectValue[find_str]);  // strange.
                 }
                 break;
               }
@@ -1197,18 +1162,20 @@ typedef struct Lpp : public Lpp_base {
     switch (fin) {
       case is_const_value: {
         if (isnative) {
-          return Return_Object(nullptr, now_const_object, parent_const_object,
-                               this_object, lastisthis);
+          return Return_Object(nullptr, Variable::var(now_const_object),
+                               Variable::var(parent_const_object), *this_object,
+                               lastisthis);
         }
-        return Return_Object(now_const_object, parent_const_object, this_object,
+        return Return_Object(Variable::var(now_const_object),
+                             Variable::var(parent_const_object), *this_object,
                              lastisthis);
       }
       case is_pointer: {
         if (isnative) {
-          return Return_Object(nullptr, now_object, parent_object, this_object,
-                               lastisthis);
+          return Return_Object(nullptr, *now_object, *parent_object,
+                               *this_object, lastisthis);
         }
-        return Return_Object(now_object, parent_object, this_object,
+        return Return_Object(*now_object, *parent_object, *this_object,
                              lastisthis);
       }
     }
