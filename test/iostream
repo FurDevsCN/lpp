@@ -17,7 +17,7 @@ var console_prototype=function(output=default_output,input=default_input){
      };
   };
   this["readline"]=function(){
-    return (this["_input"]["read"] [t]);
+    return (this["_input"]["read"] []);
   };
 }
 # cin
