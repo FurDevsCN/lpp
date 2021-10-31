@@ -370,7 +370,8 @@ typedef struct Lpp : public Lpp_base {
               exp_calc(Variable::parse(n), scope, all_scope, this_scope), scope,
               scope, false);
         } else if (nonewobject) {
-          return Return_Object(Variable::var(nullptr), scope, scope, false);
+          throw member_not_exist;
+          //return Return_Object(Variable::var(nullptr), scope, scope, false);
         } else {
           scope.ObjectValue[n].isConst = false;
           scope.ObjectValue[n].tp = Variable::Null;
