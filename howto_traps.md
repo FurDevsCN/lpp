@@ -1,22 +1,6 @@
-# This is the introduction of L++'s programming traps.
+# 这是部分现有语法问题的介绍。
 
-L++ programming language was under the MIT license.  
-Copyright(c) 2021 nu11ptr team.
-
-## Is it an object or a statement block?
-
-Here is the example:
-
-```
-var a={};
-typeof a;#???
-```
-
-The answer is,it is an **object**.  
-\(But you can use it in if,switch,while,for or try...I optimize it.\)  
-You can use **{;}** to get a **void statement**.
-
-## ++'s "bug"
+## 前自增问题
 
 ```
 var a=1;
@@ -24,9 +8,9 @@ a++;# 1
 ++a;# ExpressionError!?
 ```
 
-It is a feature\(my fault\) in L++.**++a** is not exist.
+L++旧版本的设计机制使得前自增不能被支持。重构后的新版本将考虑支持前自增。
 
-## Expression joke
+## 调用被吞了！？
 
 ```
 var a=function(){return "hello";}
@@ -34,4 +18,6 @@ var b;
 b=a [] # b == "hello"?
 ```
 
-Actually,**b = function(){return "hello";}**.You **must** use **b=(a [])** to get a function's return value.
+实际上，**b = function(){return "hello";}**。
+您必须使用**b=(a [])**来获得返回值。
+此问题将在新版被修复。请期待。
