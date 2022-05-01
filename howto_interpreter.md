@@ -1,25 +1,17 @@
-# This is the introduction about interpreter.
+# 欢迎啦！在这里你将学到怎么编译这个项目。
 
-L++ programming language was under the MIT license.  
-Copyright(c) 2021 nu11ptr team.
-
-## What is this
-
-This is a user manual about L++ interpreter\(by nu11ptr team\).  
-This interpreter works fine in **-O3** and **--std=c++0x**\(**--std=c++11**\).
-
-## How to make
+## 直入主题
 
 ```
-$ make build # minimal
-$ make debug # don't use this,only for debug
-$ ./lpp --help
+$ make build # 正常
+$ make debug # debug专用，没事别用
+$ ./lpp --help # 查看帮助
 ```
 
-## How to use
+## 参数说明
 
-**-i** or **--interactive** gives you an interactive shell.You can test your program here.  
-**-h** or **--help** gives you a help.  
-**-v** or **--version** shows the interpreter's build version.
-**filename** can let you run script.  
-**-** can let you run script **from stdin**.
+**-i** 或 **--interactive** 可打开一个可交互控制台。尽情实验你的代码吧！  
+**-h** 或 **--help** 可获取帮助。  
+**-v** 或 **--version** 可显示版本。
+**filename** 可以直接执行脚本  
+**-** 可以让你从**标准输入**读取脚本并执行\(比如：`lpp - < test.lpp`)。
